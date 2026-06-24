@@ -427,7 +427,7 @@
     <img src="icon-192.png" alt="Na účet logo">
     <span>Na účet</span>
   </div>
-  <a href="#" class="nav-cta" onclick="scrollToDownload(event)">Stiahnuť →</a>
+  <a href="#" class="nav-cta" onclick="handleNavInstall(event)">Stiahnuť →</a>
 </nav>
 
 <!-- HERO -->
@@ -725,6 +725,13 @@
         alert('Otvor Safari a zadaj:\n\n' + window.location.href);
       }
     }, 500);
+  }
+
+  function handleNavInstall(e) {
+    e.preventDefault();
+    if (isIOS) { showIosModal(e); }
+    else if (isAndroid) { handleAndroid(e); }
+    else { showPcModal(e); }
   }
 
   // Nav scroll to download
