@@ -657,23 +657,30 @@
 <!-- iOS INSTALL MODAL -->
 <div class="ios-modal-overlay" id="ios-modal">
   <div class="ios-modal">
-    <h3>📲 Pridaj Na účet na plochu</h3>
+    <div style="text-align:center; font-size:40px; margin-bottom:8px;">📲</div>
+    <h3>Inštalácia na iPhone / iPad</h3>
+
+    <div style="background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.3); border-radius:12px; padding:12px 16px; margin-bottom:16px; display:flex; align-items:center; gap:10px;">
+      <span style="font-size:20px;">⚠️</span>
+      <p style="color:#fbbf24; font-size:13px; margin:0; line-height:1.5;">Inštalácia funguje <strong>iba cez Safari</strong>. Ak si v inom prehliadači, klikni dole na tlačidlo.</p>
+    </div>
+
     <div class="ios-step">
       <div class="ios-step-num">1</div>
-      <p>Otvor túto stránku v <strong>Safari</strong> (nie Chrome ani iný prehliadač)</p>
+      <p>Klikni na ikonu <strong style="font-size:16px;">⎋</strong> <strong>Zdieľať</strong> — je v spodnej lište Safari (stred)</p>
     </div>
     <div class="ios-step">
       <div class="ios-step-num">2</div>
-      <p>Klikni na ikonu <strong>Zdieľať</strong> <span style="font-size:16px;">⎋</span> v spodnej lište prehliadača</p>
+      <p>Posuň zoznam dole a vyber <strong>„Pridať na plochu"</strong></p>
     </div>
     <div class="ios-step">
       <div class="ios-step-num">3</div>
-      <p>Vyber <strong>„Pridať na plochu"</strong> (Add to Home Screen)</p>
+      <p>Klikni <strong>„Pridať"</strong> vpravo hore — hotovo, appka je na ploche! 🎉</p>
     </div>
-    <div class="ios-step">
-      <div class="ios-step-num">4</div>
-      <p>Potvrď kliknutím na <strong>„Pridať"</strong> — appka sa objaví na ploche</p>
-    </div>
+
+    <a href="#" onclick="openInSafari(event)" style="display:block; width:100%; margin-top:20px; background:var(--blue); color:#0f172a; border:none; padding:14px; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; text-decoration:none; text-align:center; box-sizing:border-box;">
+      🧭 Otvoriť v Safari
+    </a>
     <button class="ios-modal-close" onclick="closeIosModal()">Zavrieť</button>
   </div>
 </div>
@@ -701,6 +708,25 @@
 </div>
 
 <script>
+  // ── Otvoriť v Safari (iOS) ──
+  function openInSafari(e) {
+    e.preventDefault();
+    // Pokus otvoriť aktuálnu URL v Safari
+    window.location.href = 'x-web-search://' + window.location.href.replace('https://', '');
+    // Fallback — skopíruj URL do schránky a pouč usera
+    setTimeout(function() {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(window.location.href).then(function() {
+          alert('URL skopírovaná! Otvor Safari a vlož do adresného riadka:\n\n' + window.location.href);
+        }).catch(function() {
+          alert('Otvor Safari a zadaj:\n\n' + window.location.href);
+        });
+      } else {
+        alert('Otvor Safari a zadaj:\n\n' + window.location.href);
+      }
+    }, 500);
+  }
+
   // Nav scroll to download
   function scrollToDownload(e) {
     e.preventDefault();
