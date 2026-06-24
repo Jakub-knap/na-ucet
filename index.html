@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Na účet — Barový systém pre vašu prevádzku</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -40,7 +40,7 @@
     }
     .nav-logo { display: flex; align-items: center; gap: 10px; }
     .nav-logo img { width: 36px; height: 36px; border-radius: 8px; }
-    .nav-logo span { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: white; letter-spacing: -0.5px; }
+    .nav-logo span { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 800; color: white; letter-spacing: -0.5px; }
     .nav-cta {
       background: var(--green); color: white; border: none;
       padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 600;
@@ -81,12 +81,12 @@
     @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
 
     .hero h1 {
-      font-family: 'Syne', sans-serif;
-      font-size: clamp(36px, 8vw, 72px);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: clamp(32px, 7vw, 68px);
       font-weight: 800;
       color: white;
-      line-height: 1.15;
-      letter-spacing: -1px;
+      line-height: 1.2;
+      letter-spacing: -0.5px;
       max-width: 700px;
       margin-bottom: 20px;
     }
@@ -171,7 +171,7 @@
     /* ── SECTION WRAPPER ── */
     .section { padding: 80px 24px; max-width: 1000px; margin: 0 auto; }
     .section-label { color: var(--blue); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
-    .section-title { font-family: 'Syne', sans-serif; font-size: clamp(28px, 5vw, 44px); font-weight: 800; letter-spacing: -0.5px; line-height: 1.2; margin-bottom: 16px; color: #0f172a; }
+    .section-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(28px, 5vw, 44px); font-weight: 800; letter-spacing: -0.5px; line-height: 1.2; margin-bottom: 16px; color: #0f172a; }
     .section-sub { color: var(--muted); font-size: 17px; line-height: 1.6; max-width: 520px; }
 
     /* ── FEATURES ── */
@@ -190,7 +190,7 @@
     }
     .feature-card:hover { border-color: var(--blue); box-shadow: 0 8px 30px rgba(56,189,248,0.1); }
     .feature-icon { font-size: 28px; margin-bottom: 14px; }
-    .feature-card h3 { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; color: #0f172a; }
+    .feature-card h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; color: #0f172a; }
     .feature-card p { color: var(--muted); font-size: 14px; line-height: 1.6; }
 
     /* ── SCREENSHOTS ── */
@@ -260,11 +260,11 @@
       margin-bottom: 20px;
     }
     .price-amount {
-      font-family: 'Syne', sans-serif;
-      font-size: 64px; font-weight: 800; color: white;
-      line-height: 1; letter-spacing: -2px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 72px; font-weight: 800; color: white;
+      line-height: 1; letter-spacing: -1px;
     }
-    .price-amount sup { font-size: 28px; vertical-align: super; }
+    .price-amount sup { font-size: 32px; vertical-align: super; letter-spacing: 0; }
     .price-period { color: #64748b; font-size: 15px; margin-bottom: 32px; margin-top: 4px; }
     .price-features { list-style: none; text-align: left; margin-bottom: 32px; display: flex; flex-direction: column; gap: 12px; }
     .price-features li { display: flex; align-items: center; gap: 10px; color: #cbd5e1; font-size: 15px; }
@@ -287,7 +287,7 @@
     }
     .footer-logo { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px; }
     .footer-logo img { width: 28px; height: 28px; border-radius: 6px; }
-    .footer-logo span { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 800; color: white; }
+    .footer-logo span { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 800; color: white; }
     footer p { color: #475569; font-size: 13px; }
 
     /* ── RESPONSIVE ── */
@@ -486,7 +486,7 @@
 
     <div class="price-card">
       <div class="price-badge-top">⚡ Mesačné predplatné</div>
-      <div class="price-amount"><sup>€</sup>0,99</div>
+      <div class="price-amount">0,99 <sup>€</sup></div>
       <div class="price-period">za mesiac · zrušiť kedykoľvek</div>
 
       <ul class="price-features">
