@@ -514,5 +514,29 @@
   <p>Barový systém pre slovenské prevádzky · © 2026</p>
 </footer>
 
+
+<div id="messenger-banner" style="display:none; position:fixed; top:0; left:0; right:0; background:#1e293b; color:white; padding:16px 20px; z-index:9999; text-align:center; font-family:Inter,sans-serif; box-shadow:0 4px 20px rgba(0,0,0,0.4);">
+  <div style="font-size:18px; margin-bottom:6px;">⚠️ Otvor v Chrome pre prihlásenie</div>
+  <div style="font-size:14px; color:#94a3b8; margin-bottom:12px;">Messenger prehliadač nepodporuje Google prihlásenie</div>
+  <div style="font-size:13px; background:#334155; padding:10px; border-radius:8px; display:inline-block;">
+    Klikni na <strong>···</strong> vpravo hore → <strong>"Otvoriť v Chrome"</strong>
+  </div>
+</div>
+
+<script>
+  (function() {
+    var isInApp = /FBAN|FBAV|Instagram|Messenger|FB_IAB/i.test(navigator.userAgent);
+    if (isInApp) {
+      document.getElementById("messenger-banner").style.display = "block";
+      document.querySelectorAll("a[href="/app"]").forEach(function(el) {
+        el.addEventListener("click", function(e) {
+          e.preventDefault();
+          document.getElementById("messenger-banner").scrollIntoView({ behavior: "smooth" });
+        });
+      });
+    }
+  })();
+</script>
 </body>
 </html>
+
