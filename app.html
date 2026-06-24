@@ -302,6 +302,13 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// Spracovanie výsledku po redirect prihlásení (potrebné pre iOS Safari)
+auth.getRedirectResult().catch(err => {
+    if (err.code !== 'auth/no-auth-event') {
+        alert('Chyba pri prihlásení: ' + err.message);
+    }
+});
+
 // ============================================================
 // 🔐 AUTENTIFIKÁCIA
 // ============================================================
@@ -309,21 +316,18 @@ let currentUser = null;
 let userRef = null;
 
 function signInWithGoogle() {
-    const isInAppBrowser = /FBAN|FBAV|Instagram|Messenger|FB_IAB/i.test(navigator.userAgent);
-    if (isInAppBrowser) {
-        alert('⚠️ Prihlásenie cez Facebook/Messenger prehliadač nefunguje.\n\nKlikni na ··· (tri bodky) → "Otvoriť v Chrome" alebo "Otvoriť v prehliadači"');
-        return;
-    }
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithRedirect(provider);
-}
-
-// Spracovanie výsledku po redirect prihlásení
-auth.getRedirectResult().catch(err => {
-    if (err.code !== 'auth/no-auth-event') {
-        alert('Chyba pri prihlásení: ' + err.message);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+        auth.signInWithRedirect(provider).catch(err => {
+            alert('Chyba pri prihlásení: ' + err.message);
+        });
+    } else {
+        auth.signInWithPopup(provider).catch(err => {
+            alert('Chyba pri prihlásení: ' + err.message);
+        });
     }
-});
+}
 
 function signOut() {
     if (confirm('Naozaj sa chceš odhlásiť?')) {
