@@ -18,6 +18,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
         * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
@@ -302,7 +303,8 @@
             </div>
         </div>
 
-        <button class="btn-clear" style="margin-top:10px; width:100%; background:#991b1b; color:white; border:none;" onclick="resetRevenue()">Vynulovať tržbu a predaje</button>
+        <button class="btn-clear" style="margin-top:10px; width:100%; background:#0ea5e9; color:white; border:none; font-weight:bold;" onclick="dailyClose()">📄 Uzávierka dňa (stiahnuť PDF)</button>
+        <button class="btn-clear" style="margin-top:8px; width:100%; background:#991b1b; color:white; border:none;" onclick="resetRevenue()">Vynulovať tržbu a predaje</button>
     </div>
 </div>
 </div>
@@ -903,6 +905,139 @@ async function modifyRevenue(action, method) {
     document.getElementById('quickAmountInput').value = '';
     document.getElementById('quickDrinkSelect').value = '';
     await saveStats();
+}
+
+async function dailyClose() {
+    // Skontroluj či je čo uzavrieť
+    const soldDrinks = menu.filter(d => (d.sold || 0) > 0);
+    if (totalCash === 0 && totalCard === 0 && soldDrinks.length === 0) {
+        return alert('Dnes zatiaľ žiadny predaj — niet čo uzavrieť.');
+    }
+
+    if (!confirm('Vygenerovať denný výpis (PDF) a uzavrieť deň?\n\nPo uzávierke sa tržby a počty predaných nápojov vynulujú na nový deň.')) return;
+
+    // Pripni dnešný dátum
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const dateStr = `${dd}.${mm}.${yyyy}`;
+    const timeStr = `${hh}:${min}`;
+
+    // Meno baru / užívateľa
+    const barName = (currentUser && (currentUser.displayName || currentUser.email)) || 'Na účet';
+
+    // Vygeneruj PDF
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        let y = 20;
+        const left = 20;
+        const right = 190;
+
+        // Hlavička
+        doc.setFontSize(18);
+        doc.setFont(undefined, 'bold');
+        doc.text('DENNY VYPIS', left, y);
+        y += 8;
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'normal');
+        doc.text(`${barName}`, left, y);
+        y += 6;
+        doc.text(`Datum: ${dateStr}   Cas uzavierky: ${timeStr}`, left, y);
+        y += 6;
+        doc.setDrawColor(150);
+        doc.line(left, y, right, y);
+        y += 10;
+
+        // Tržby
+        doc.setFontSize(13);
+        doc.setFont(undefined, 'bold');
+        doc.text('TRZBY', left, y);
+        y += 8;
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'normal');
+        doc.text('Platene hotovostou:', left, y);
+        doc.text(`${totalCash.toFixed(2)} EUR`, right, y, { align: 'right' });
+        y += 7;
+        doc.text('Platene kartou:', left, y);
+        doc.text(`${totalCard.toFixed(2)} EUR`, right, y, { align: 'right' });
+        y += 7;
+        doc.setFont(undefined, 'bold');
+        doc.text('SPOLU:', left, y);
+        doc.text(`${totalRevenue.toFixed(2)} EUR`, right, y, { align: 'right' });
+        y += 10;
+        doc.setDrawColor(150);
+        doc.line(left, y, right, y);
+        y += 10;
+
+        // Predané nápoje
+        doc.setFontSize(13);
+        doc.setFont(undefined, 'bold');
+        doc.text('PREDANE', left, y);
+        y += 8;
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'normal');
+
+        if (soldDrinks.length === 0) {
+            doc.text('Ziadne konkretne napoje (len volne sumy).', left, y);
+            y += 7;
+        } else {
+            // Hlavička stĺpcov
+            doc.setFont(undefined, 'bold');
+            doc.text('Napoj', left, y);
+            doc.text('Ks', 130, y, { align: 'right' });
+            doc.text('Suma', right, y, { align: 'right' });
+            y += 6;
+            doc.setFont(undefined, 'normal');
+            doc.setDrawColor(220);
+            doc.line(left, y - 2, right, y - 2);
+
+            soldDrinks.forEach(d => {
+                const ks = d.sold || 0;
+                const suma = ks * d.price;
+                // odstráň diakritiku pre PDF (jsPDF default font ju nezvláda dobre)
+                const name = removeDiacritics(d.name);
+                doc.text(name, left, y);
+                doc.text(`${ks}`, 130, y, { align: 'right' });
+                doc.text(`${suma.toFixed(2)} EUR`, right, y, { align: 'right' });
+                y += 6;
+                if (y > 270) { doc.addPage(); y = 20; }
+            });
+        }
+
+        y += 6;
+        doc.setDrawColor(150);
+        doc.line(left, y, right, y);
+        y += 8;
+        doc.setFontSize(9);
+        doc.setTextColor(120);
+        doc.text('Vygenerovane aplikaciou Na ucet', left, y);
+
+        // Stiahni
+        doc.save(`vypis-${yyyy}-${mm}-${dd}.pdf`);
+    } catch (err) {
+        return alert('Chyba pri generovani PDF: ' + err.message);
+    }
+
+    // Po vygenerovaní vynuluj deň
+    totalRevenue = 0; totalCash = 0; totalCard = 0;
+    lastPaidAccount = null;
+    for (const drink of menu) {
+        drink.sold = 0;
+        await saveDrink(drink);
+    }
+    await Promise.all([saveStats(), saveLastPaid()]);
+
+    alert('Denny vypis bol stiahnuty a den uzavrety. Zacina novy den.');
+}
+
+// Odstránenie diakritiky (jsPDF default font nezvláda š,č,ž... dobre)
+function removeDiacritics(str) {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 async function resetRevenue() {
