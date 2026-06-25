@@ -104,6 +104,11 @@
         .storno-box { border-color: #10b981; background: #022c22; display: none; }
         .ucet-card { border-bottom: 1px solid #334155; padding: 16px 0; }
         .ucet-card:last-child { border-bottom: none; }
+        .table-group { margin-bottom: 18px; border: 1px solid #334155; border-radius: 12px; padding: 6px 14px 10px; background: #131c2e; }
+        .table-group:last-child { margin-bottom: 0; }
+        .table-group-header { display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: #38bdf8; font-size: 17px; padding: 10px 2px; border-bottom: 2px solid #334155; margin-bottom: 4px; }
+        .table-group-total { color: #10b981; font-size: 16px; }
+        .table-group .ucet-card:last-child { border-bottom: none; }
         .ucet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .customer-name { font-weight: 700; color: #f8fafc; font-size: 19px; }
         .total-price { font-weight: 800; color: #38bdf8; font-size: 19px; background: #1e293b; padding: 4px 10px; border-radius: 8px; border: 1px solid #334155; }
@@ -171,10 +176,21 @@
             <span class="admin-icon" id="adminIcon">▼</span>
         </div>
         <div class="admin-content">
-            <h3>Pridať hosťa / stôl</h3>
+            <h3>Pridať stôl</h3>
             <div class="row">
-                <input type="text" id="newCustomerName" placeholder="Meno alebo číslo stola...">
-                <button class="btn-add" onclick="addCustomer()">+</button>
+                <input type="text" id="newTableName" placeholder="Názov stola (napr. Stôl č.1, Štamgasti...)">
+                <button class="btn-add" onclick="addTable()">+</button>
+            </div>
+
+            <h3 style="margin-top: 15px;">Pridať hosťa k stolu</h3>
+            <div class="row row-vertical">
+                <select id="newGuestTable">
+                    <option value="">-- Najprv vyber stôl --</option>
+                </select>
+                <div class="row" style="margin-bottom: 0;">
+                    <input type="text" id="newGuestName" placeholder="Meno hosťa (napr. Jozef...)">
+                    <button class="btn-add" onclick="addGuest()">+</button>
+                </div>
             </div>
 
             <h3 style="margin-top: 15px;">Pridať nový nápoj</h3>
@@ -183,6 +199,7 @@
                     <option value="Pivo">🍺 Pivo</option>
                     <option value="Alkohol">🥃 Alkoholické nápoje</option>
                     <option value="Nealko">🥤 Nealkoholické nápoje</option>
+                    <option value="Cigarety">🚬 Cigarety</option>
                     <option value="Ostatne">🍿 Ostatné</option>
                 </select>
                 <input type="text" id="newDrinkName" placeholder="Názov (napr. Plzeň 12...)">
@@ -192,15 +209,23 @@
                 </div>
             </div>
 
-            <h3 style="margin-top: 25px; color: #38bdf8; border-top: 1px dashed #334155; padding-top: 15px;">Odstrániť hosťa zo systému</h3>
+            <h3 style="margin-top: 25px; color: #38bdf8; border-top: 1px dashed #334155; padding-top: 15px;">Vymazať stôl</h3>
             <div class="row row-vertical">
-                <select id="deleteCustomerSelect">
-                    <option value="">-- Vyber koho úplne zmazať --</option>
+                <select id="deleteTableSelect">
+                    <option value="">-- Vyber stôl na zmazanie --</option>
                 </select>
-                <button class="btn-delete-admin" onclick="deleteCustomerFromSystem()">Vymazať stôl alebo zákazníka</button>
+                <button class="btn-delete-admin" onclick="deleteTableFromSystem()">Vymazať stôl (aj s hosťami)</button>
             </div>
 
-            <h3 style="margin-top: 15px; color: #38bdf8;">Odstrániť nápoj z ponuky</h3>
+            <h3 style="margin-top: 15px; color: #38bdf8;">Vymazať hosťa</h3>
+            <div class="row row-vertical">
+                <select id="deleteCustomerSelect">
+                    <option value="">-- Vyber hosťa na zmazanie --</option>
+                </select>
+                <button class="btn-delete-admin" onclick="deleteCustomerFromSystem()">Vymazať hosťa</button>
+            </div>
+
+            <h3 style="margin-top: 15px; color: #38bdf8;">Vymazať nápoj</h3>
             <div class="row row-vertical">
                 <select id="deleteDrinkSelect">
                     <option value="">-- Vyber nápoj na zmazanie --</option>
@@ -212,9 +237,13 @@
 
     <h2>Nahadzovanie objednávok</h2>
     <div class="row row-vertical" style="background: #1e293b; padding: 0px; border-radius: 10px;">
-        <h3>Vyber hosťa / stôl:</h3>
+        <h3>Vyber stôl:</h3>
+        <select id="selectTable" onchange="updateGuestDropdown()">
+            <option value="">-- Vyber stôl --</option>
+        </select>
+        <h3 style="margin-top: 5px;">Vyber hosťa:</h3>
         <select id="selectCustomer">
-            <option value="">-- Vyber člena/stôl --</option>
+            <option value="">-- Najprv vyber stôl --</option>
         </select>
         <h3 style="margin-top: 5px;">Filtrovať ponuku:</h3>
         <select id="filterCategory" onchange="updateDrinkDropdown()">
@@ -222,6 +251,7 @@
             <option value="Pivo">🍺 Pivo</option>
             <option value="Alkohol">🥃 Alkoholické nápoje</option>
             <option value="Nealko">🥤 Nealkoholické nápoje</option>
+            <option value="Cigarety">🚬 Cigarety</option>
             <option value="Ostatne">🍿 Ostatné</option>
         </select>
         <h3 style="margin-top: 5px;">Vyber nápoj a pridaj:</h3>
@@ -385,6 +415,8 @@ auth.onAuthStateChanged(user => {
 let customers = [];
 let menu = [];
 let orders = {};
+let tables = [];           // zoznam názvov stolov
+let guestTable = {};       // mapovanie: meno hosťa -> názov stola
 let totalRevenue = 0;
 let totalCash = 0;
 let totalCard = 0;
@@ -432,13 +464,24 @@ async function loadAllData() {
             });
         unsubscribeListeners.push(unsubMenu);
 
+        // 3b. Stoly (real-time)
+        const unsubTables = userRef.collection('tables')
+            .onSnapshot(snap => {
+                tables = snap.docs.map(d => d.data().name);
+                updateDropdowns();
+                renderAccounts();
+            });
+        unsubscribeListeners.push(unsubTables);
+
         // 4. Zákazníci + objednávky (real-time)
         const unsubCust = userRef.collection('customers')
             .onSnapshot(snap => {
                 customers = snap.docs.map(d => d.data().name);
+                guestTable = {};
                 snap.docs.forEach(d => {
                     const name = d.data().name;
                     orders[name] = d.data().items || [];
+                    guestTable[name] = d.data().table || '';
                 });
                 // Vyčisti orders pre zmazaných zákazníkov
                 const currentNames = new Set(customers);
@@ -496,15 +539,22 @@ async function saveLastPaid() {
     );
 }
 
-async function saveCustomer(name, items) {
+async function saveCustomer(name, items, table) {
     if (!userRef) return;
     setSyncing(true);
     try {
-        await userRef.collection('customers').doc(btoa(encodeURIComponent(name))).set({
+        const data = {
             name: name,
             items: items || [],
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        };
+        // Ak je table zadané, ulož ho; inak zachovaj existujúce priradenie
+        if (table !== undefined) {
+            data.table = table;
+        } else if (guestTable[name] !== undefined) {
+            data.table = guestTable[name];
+        }
+        await userRef.collection('customers').doc(btoa(encodeURIComponent(name))).set(data, { merge: true });
     } finally {
         setSyncing(false);
     }
@@ -513,6 +563,24 @@ async function saveCustomer(name, items) {
 async function deleteCustomerDoc(name) {
     if (!userRef) return;
     await userRef.collection('customers').doc(btoa(encodeURIComponent(name))).delete();
+}
+
+async function saveTable(name) {
+    if (!userRef) return;
+    setSyncing(true);
+    try {
+        await userRef.collection('tables').doc(btoa(encodeURIComponent(name))).set({
+            name: name,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } finally {
+        setSyncing(false);
+    }
+}
+
+async function deleteTableDoc(name) {
+    if (!userRef) return;
+    await userRef.collection('tables').doc(btoa(encodeURIComponent(name))).delete();
 }
 
 async function saveDrink(drink) {
@@ -545,18 +613,35 @@ function toggleAdminPanel() {
 }
 
 function updateDropdowns() {
-    const selectCust = document.getElementById('selectCustomer');
-    const deleteCustSel = document.getElementById('deleteCustomerSelect');
-    const currentCust = selectCust.value;
+    // --- Stoly: výber v objednávkach, priradenie hosťa, mazanie stola ---
+    const selTable = document.getElementById('selectTable');
+    const newGuestTable = document.getElementById('newGuestTable');
+    const delTableSel = document.getElementById('deleteTableSelect');
+    const curSelTable = selTable.value;
+    const curNewGuestTable = newGuestTable.value;
 
-    selectCust.innerHTML = '<option value="">-- Vyber člena/stôl --</option>';
-    deleteCustSel.innerHTML = '<option value="">-- Vyber koho úplne zmazať --</option>';
+    selTable.innerHTML = '<option value="">-- Vyber stôl --</option>';
+    newGuestTable.innerHTML = '<option value="">-- Najprv vyber stôl --</option>';
+    delTableSel.innerHTML = '<option value="">-- Vyber stôl na zmazanie --</option>';
 
-    customers.forEach(c => {
-        selectCust.innerHTML += `<option value="${c}">${c}</option>`;
-        deleteCustSel.innerHTML += `<option value="${c}">${c}</option>`;
+    tables.forEach(t => {
+        selTable.innerHTML += `<option value="${t}">${t}</option>`;
+        newGuestTable.innerHTML += `<option value="${t}">${t}</option>`;
+        delTableSel.innerHTML += `<option value="${t}">${t}</option>`;
     });
-    selectCust.value = currentCust;
+    selTable.value = curSelTable;
+    newGuestTable.value = curNewGuestTable;
+
+    // --- Hostia: mazanie hosťa (všetci) ---
+    const deleteCustSel = document.getElementById('deleteCustomerSelect');
+    deleteCustSel.innerHTML = '<option value="">-- Vyber hosťa na zmazanie --</option>';
+    customers.forEach(c => {
+        const t = guestTable[c] ? ` (${guestTable[c]})` : '';
+        deleteCustSel.innerHTML += `<option value="${c}">${c}${t}</option>`;
+    });
+
+    // --- Hostia podľa vybraného stola (v objednávkach) ---
+    updateGuestDropdown();
 
     updateDrinkDropdown();
     updateDeleteDrinkDropdown();
@@ -568,6 +653,26 @@ function updateDropdowns() {
             quickDrinkSel.innerHTML += `<option value="${d.name}">${d.name} (${d.price.toFixed(2)}€)</option>`;
         });
     }
+}
+
+function updateGuestDropdown() {
+    const selTable = document.getElementById('selectTable');
+    const selectCust = document.getElementById('selectCustomer');
+    const chosenTable = selTable.value;
+    const currentCust = selectCust.value;
+
+    if (!chosenTable) {
+        selectCust.innerHTML = '<option value="">-- Najprv vyber stôl --</option>';
+        return;
+    }
+
+    selectCust.innerHTML = '<option value="">-- Vyber hosťa --</option>';
+    customers.forEach(c => {
+        if (guestTable[c] === chosenTable) {
+            selectCust.innerHTML += `<option value="${c}">${c}</option>`;
+        }
+    });
+    selectCust.value = currentCust;
 }
 
 function updateDrinkDropdown() {
@@ -595,13 +700,25 @@ function updateDeleteDrinkDropdown() {
 // ============================================================
 // ➕ PRIDÁVANIE
 // ============================================================
-async function addCustomer() {
-    const input = document.getElementById('newCustomerName');
+async function addTable() {
+    const input = document.getElementById('newTableName');
     const name = input.value.trim();
-    if (name && !customers.includes(name)) {
-        input.value = '';
-        await saveCustomer(name, []);
-    }
+    if (!name) return;
+    if (tables.includes(name)) return alert('Tento stôl už existuje!');
+    input.value = '';
+    await saveTable(name);
+}
+
+async function addGuest() {
+    const tableSel = document.getElementById('newGuestTable');
+    const input = document.getElementById('newGuestName');
+    const table = tableSel.value;
+    const name = input.value.trim();
+    if (!table) return alert('Najprv vyber stôl!');
+    if (!name) return alert('Zadaj meno hosťa!');
+    if (customers.includes(name)) return alert('Hosť s týmto menom už existuje!');
+    input.value = '';
+    await saveCustomer(name, [], table);
 }
 
 async function addDrink() {
@@ -627,6 +744,21 @@ async function addDrink() {
 // ============================================================
 // ❌ MAZANIE
 // ============================================================
+async function deleteTableFromSystem() {
+    const table = document.getElementById('deleteTableSelect').value;
+    if (!table) return alert('Vyber stôl zo zoznamu na zmazanie!');
+    const guestsAtTable = customers.filter(c => guestTable[c] === table);
+    const msg = guestsAtTable.length > 0
+        ? `Chceš zmazať stôl "${table}" aj so všetkými hosťami (${guestsAtTable.length})?`
+        : `Chceš zmazať stôl "${table}"?`;
+    if (!confirm(msg)) return;
+    // Zmaž všetkých hostí pri stole
+    for (const g of guestsAtTable) {
+        await deleteCustomerDoc(g);
+    }
+    await deleteTableDoc(table);
+}
+
 async function deleteCustomerFromSystem() {
     const customer = document.getElementById('deleteCustomerSelect').value;
     if (!customer) return alert('Vyber hosťa zo zoznamu na zmazanie!');
@@ -805,7 +937,7 @@ function renderStats() {
     const container = document.getElementById('statsCategoriesContainer');
     container.innerHTML = '';
 
-    const categories = { 'Pivo': '🍺 Pivo', 'Alkohol': '🥃 Alkoholické nápoje', 'Nealko': '🥤 Nealkoholické nápoje', 'Ostatne': '🍿 Ostatné' };
+    const categories = { 'Pivo': '🍺 Pivo', 'Alkohol': '🥃 Alkoholické nápoje', 'Nealko': '🥤 Nealkoholické nápoje', 'Cigarety': '🚬 Cigarety', 'Ostatne': '🍿 Ostatné' };
 
     for (const [key, label] of Object.entries(categories)) {
         const categoryDrinks = menu.filter(d => (d.category || 'Ostatne') === key);
@@ -832,52 +964,98 @@ function renderStornoBox() {
     }
 }
 
+function renderGuestCard(customer) {
+    const items = orders[customer] || [];
+    let total = 0;
+    let drinkData = {};
+
+    items.forEach(item => {
+        total += item.price;
+        if (!drinkData[item.name]) drinkData[item.name] = { count: 0, singlePrice: item.price };
+        drinkData[item.name].count++;
+    });
+
+    let listHtml = '<ul class="drink-list">';
+    for (const [drinkName, info] of Object.entries(drinkData)) {
+        const total2 = info.singlePrice * info.count;
+        listHtml += `
+            <li class="drink-item">
+                <div><span class="count-badge">${info.count}ks</span><span>${drinkName}</span></div>
+                <div class="controls">
+                    <span style="font-weight:600;margin-right:8px;font-size:14px;">${total2.toFixed(2)}€</span>
+                    <button class="btn-calc btn-minus" onclick="changeItemCount('${customer}','${drinkName}','minus')">−</button>
+                    <button class="btn-calc btn-plus-small" onclick="changeItemCount('${customer}','${drinkName}','plus')">+</button>
+                </div>
+            </li>`;
+    }
+    listHtml += '</ul>';
+
+    return `
+        <div class="ucet-card">
+            <div class="ucet-header">
+                <span class="customer-name">${customer}</span>
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+                    <span class="total-price">${total.toFixed(2)}€</span>
+                    <button class="btn-pay-cash" onclick="closeAndPayAccount('${customer}','cash')">💵 Hotovosť</button>
+                    <button class="btn-pay-card" onclick="closeAndPayAccount('${customer}','card')">💳 Karta</button>
+                </div>
+            </div>
+            ${listHtml}
+        </div>`;
+}
+
 function renderAccounts() {
     const container = document.getElementById('accountsContainer');
     container.innerHTML = '';
     let hasActiveOrders = false;
 
+    // Zoskup hostí s objednávkami podľa stola
+    const byTable = {};      // stôl -> [hostia s objednávkami]
+    const noTable = [];      // hostia bez stola (staré dáta) s objednávkami
+
     for (const customer of customers) {
         const items = orders[customer] || [];
-        if (items.length > 0) {
-            hasActiveOrders = true;
-            let total = 0;
-            let drinkData = {};
-
-            items.forEach(item => {
-                total += item.price;
-                if (!drinkData[item.name]) drinkData[item.name] = { count: 0, singlePrice: item.price };
-                drinkData[item.name].count++;
-            });
-
-            let listHtml = '<ul class="drink-list">';
-            for (const [drinkName, info] of Object.entries(drinkData)) {
-                const total2 = info.singlePrice * info.count;
-                listHtml += `
-                    <li class="drink-item">
-                        <div><span class="count-badge">${info.count}ks</span><span>${drinkName}</span></div>
-                        <div class="controls">
-                            <span style="font-weight:600;margin-right:8px;font-size:14px;">${total2.toFixed(2)}€</span>
-                            <button class="btn-calc btn-minus" onclick="changeItemCount('${customer}','${drinkName}','minus')">−</button>
-                            <button class="btn-calc btn-plus-small" onclick="changeItemCount('${customer}','${drinkName}','plus')">+</button>
-                        </div>
-                    </li>`;
-            }
-            listHtml += '</ul>';
-
-            container.innerHTML += `
-                <div class="ucet-card">
-                    <div class="ucet-header">
-                        <span class="customer-name">${customer}</span>
-                        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
-                            <span class="total-price">${total.toFixed(2)}€</span>
-                            <button class="btn-pay-cash" onclick="closeAndPayAccount('${customer}','cash')">💵 Hotovosť</button>
-                            <button class="btn-pay-card" onclick="closeAndPayAccount('${customer}','card')">💳 Karta</button>
-                        </div>
-                    </div>
-                    ${listHtml}
-                </div>`;
+        if (items.length === 0) continue;
+        hasActiveOrders = true;
+        const t = guestTable[customer];
+        if (t && tables.includes(t)) {
+            if (!byTable[t]) byTable[t] = [];
+            byTable[t].push(customer);
+        } else {
+            noTable.push(customer);
         }
+    }
+
+    // Vykresli stoly v poradí ako sú v zozname tables
+    for (const table of tables) {
+        const guests = byTable[table];
+        if (!guests || guests.length === 0) continue;
+
+        let tableTotal = 0;
+        guests.forEach(g => (orders[g] || []).forEach(i => tableTotal += i.price));
+
+        let cardsHtml = '';
+        guests.forEach(g => { cardsHtml += renderGuestCard(g); });
+
+        container.innerHTML += `
+            <div class="table-group">
+                <div class="table-group-header">
+                    <span>🪑 ${table}</span>
+                    <span class="table-group-total">${tableTotal.toFixed(2)}€</span>
+                </div>
+                ${cardsHtml}
+            </div>`;
+    }
+
+    // Hostia bez priradeného stola (zo starých dát)
+    if (noTable.length > 0) {
+        let cardsHtml = '';
+        noTable.forEach(g => { cardsHtml += renderGuestCard(g); });
+        container.innerHTML += `
+            <div class="table-group">
+                <div class="table-group-header"><span>❓ Bez stola</span></div>
+                ${cardsHtml}
+            </div>`;
     }
 
     if (!hasActiveOrders) {
