@@ -302,8 +302,19 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Spracovanie výsledku po redirect prihlásení (potrebné pre iOS Safari)
-auth.getRedirectResult().catch(err => {
+// Nastav LOCAL persistence — zostane prihlásený aj po zatvorení PWA
+// a hlavne: zachová stav počas redirect prihlásenia
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err => {
+    console.warn('Persistence error:', err);
+});
+
+// Spracovanie výsledku po redirect prihlásení (mobil + nainštalovaná PWA)
+auth.getRedirectResult().then(result => {
+    if (result && result.user) {
+        // Úspešné prihlásenie cez redirect — onAuthStateChanged sa postará o zvyšok
+        console.log('Redirect login OK:', result.user.email);
+    }
+}).catch(err => {
     if (err.code !== 'auth/no-auth-event') {
         alert('Chyba pri prihlásení: ' + err.message);
     }
@@ -317,14 +328,29 @@ let userRef = null;
 
 function signInWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+
+    // Detekcia: mobil ALEBO nainštalovaná PWA (standalone režim)
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (isMobile) {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+        || window.navigator.standalone === true;
+
+    if (isMobile || isStandalone) {
+        // Redirect je jediný spoľahlivý spôsob na mobile a v nainštalovanej PWA
         auth.signInWithRedirect(provider).catch(err => {
             alert('Chyba pri prihlásení: ' + err.message);
         });
     } else {
+        // Desktop prehliadač — popup funguje
         auth.signInWithPopup(provider).catch(err => {
-            alert('Chyba pri prihlásení: ' + err.message);
+            // Ak popup zlyhá (blokovaný), skús redirect
+            if (err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request') {
+                auth.signInWithRedirect(provider).catch(e => {
+                    alert('Chyba pri prihlásení: ' + e.message);
+                });
+            } else if (err.code !== 'auth/popup-closed-by-user') {
+                alert('Chyba pri prihlásení: ' + err.message);
+            }
         });
     }
 }
