@@ -427,7 +427,7 @@
     <img src="icon-192.png" alt="Na účet logo">
     <span>Na účet</span>
   </div>
-  <a href="/app" class="nav-cta" onclick="return handleAppOpen(event)">Spustiť aplikáciu →</a>
+  <a href="#" class="nav-cta" onclick="handleNavInstall(event)">Stiahnuť →</a>
 </nav>
 
 <!-- HERO -->
@@ -435,10 +435,21 @@
   <div class="hero-badge"><span></span> Teraz dostupné online</div>
   <h1>Barový systém,<br>ktorý <em>naozaj funguje</em></h1>
   <p>Spravujte účty hostí, menu a tržby z mobilu. Bez papierov, bez chýb — len rýchly servis.</p>
-  <div class="hero-btns">
-    <a href="/app" class="btn-primary" onclick="return handleAppOpen(event)">🍺 Spustiť aplikáciu</a>
-    <a href="#features" class="btn-secondary">Ako to funguje</a>
+  <div class="download-btns">
+    <a href="#" class="btn-download btn-dl-android" id="btn-android" onclick="handleAndroid(event)">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M6.18 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm11.64 0a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM3.5 9.5l1.44 2.5A7.5 7.5 0 0 0 4.5 15a7.5 7.5 0 0 0 .28 2.03L2.7 18.1a.75.75 0 0 0 .65 1.2l2.2-1.13A7.5 7.5 0 0 0 10 20.5h4a7.5 7.5 0 0 0 4.45-1.43l2.2 1.13a.75.75 0 0 0 .65-1.2l-2.08-1.07A7.5 7.5 0 0 0 19.5 15a7.5 7.5 0 0 0-.44-2.5L20.5 9.5a.75.75 0 1 0-1.3-.75l-1.38 2.4A7.5 7.5 0 0 0 14 9.5h-4a7.5 7.5 0 0 0-3.82 1.65L4.8 8.75A.75.75 0 1 0 3.5 9.5ZM9.25 5a.75.75 0 0 1 .75-.75h.5V3a.75.75 0 0 1 1.5 0v1.25h.5a.75.75 0 0 1 0 1.5h-3a.75.75 0 0 1-.75-.75Z"/></svg>
+      Stiahnuť pre Android
+    </a>
+    <a href="#" class="btn-download btn-dl-ios" id="btn-ios" onclick="showIosModal(event)">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83ZM13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11Z"/></svg>
+      Stiahnuť pre iOS
+    </a>
+    <a href="#" class="btn-download btn-dl-pc" id="btn-pc" onclick="showPcModal(event)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      Spustiť na PC
+    </a>
   </div>
+  <p class="hero-hint">Bez App Store · Funguje priamo z prehliadača · Zadarmo na skúšku</p>
 
   <!-- Phone mockup -->
   <div class="hero-mockup">
@@ -446,15 +457,28 @@
       <div class="phone-notch"></div>
       <div class="phone-screen">
         <div class="phone-title">Na účet</div>
+        <div style="color:var(--blue);font-weight:800;font-size:12px;margin-bottom:6px;display:flex;justify-content:space-between;">
+          <span>🪑 Stôl č.1</span><span style="color:#10b981;">14,50€</span>
+        </div>
         <div class="phone-card">
           <div class="phone-card-header">
-            <span class="phone-name">Stôl 1 — Jozef</span>
-            <span class="phone-total">14,50€</span>
+            <span class="phone-name">Jozef</span>
+            <span class="phone-total">9,50€</span>
           </div>
           <div class="phone-item"><span>🍺 Pivo x2</span><span>6,00€</span></div>
           <div class="phone-item"><span>🥃 Borovička x1</span><span>3,50€</span></div>
+          <div class="phone-btns">
+            <button class="phone-btn-cash">💵 Hotovosť</button>
+            <button class="phone-btn-card">💳 Karta</button>
+          </div>
+        </div>
+        <div class="phone-card">
+          <div class="phone-card-header">
+            <span class="phone-name">Ján</span>
+            <span class="phone-total">5,00€</span>
+          </div>
           <div class="phone-item"><span>🥤 Kofola x1</span><span>2,00€</span></div>
-          <div class="phone-item"><span>🍿 Chips x1</span><span>3,00€</span></div>
+          <div class="phone-item"><span>🚬 Marlboro x1</span><span>3,00€</span></div>
           <div class="phone-btns">
             <button class="phone-btn-cash">💵 Hotovosť</button>
             <button class="phone-btn-card">💳 Karta</button>
@@ -481,8 +505,8 @@
     <div class="features-grid">
       <div class="feature-card">
         <div class="feature-icon">📋</div>
-        <h3>Účty pre každého hosťa</h3>
-        <p>Vytvorte stôl alebo meno hosťa a pridávajte nápoje jedným kliknutím. Všetko prehľadne na jednom mieste.</p>
+        <h3>Stoly a hostia</h3>
+        <p>Vytvorte stoly a hostí, priraďte nápoje jedným kliknutím. Ten istý hosť môže sedieť pri viacerých stoloch naraz.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🔄</div>
@@ -497,7 +521,7 @@
       <div class="feature-card">
         <div class="feature-icon">🍺</div>
         <h3>Vlastné menu</h3>
-        <p>Pridajte a upravujte nápoje podľa svojho cenníka. Kategórie pivo, alkohol, nealko a ostatné.</p>
+        <p>Pridajte a upravujte nápoje podľa svojho cenníka. Kategórie pivo, alkohol, nealko, cigarety a ostatné.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">↩️</div>
@@ -505,9 +529,9 @@
         <p>Chyba sa stane. Posledná platba sa dá jedným kliknutím stornovať a vrátiť na otvorený účet.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">📱</div>
-        <h3>Funguje ako appka</h3>
-        <p>Nainštalujte Na účet na plochu telefónu cez Chrome. Žiadny App Store, žiadne čakanie.</p>
+        <div class="feature-icon">📄</div>
+        <h3>Denná uzávierka v PDF</h3>
+        <p>Na konci dňa jedným klikom stiahnete výpis tržieb a predaja v PDF. Hotovosť, karty aj počty predaných nápojov.</p>
       </div>
     </div>
   </div>
@@ -544,10 +568,11 @@
           <div class="screen-content">
             <div class="scr-order">
               <div style="color:var(--blue);font-weight:800;font-size:11px;margin-bottom:4px;">Nahadzovanie objednávok</div>
-              <div class="scr-select">👤 Stôl 1 — Jozef</div>
+              <div class="scr-select">🪑 Stôl č.1</div>
+              <div class="scr-select">👤 Jozef</div>
               <div class="scr-select">🍺 Pivo — Zlatý Bažant (3,00€)</div>
               <div class="scr-plus-btn">+</div>
-              <div style="color:#64748b;font-size:9px;margin-top:4px;">Klikni + pre pridanie nápoja</div>
+              <div style="color:#64748b;font-size:9px;margin-top:4px;">Stôl → hosť → nápoj</div>
             </div>
           </div>
         </div>
@@ -560,6 +585,7 @@
           <div class="screen-notch"></div>
           <div class="screen-content">
             <div style="color:var(--blue);font-weight:800;font-size:11px;margin-bottom:8px;">Otvorené účty</div>
+            <div style="color:var(--blue);font-weight:800;font-size:9px;margin-bottom:4px;display:flex;justify-content:space-between;"><span>🪑 Stôl č.1</span><span style="color:#10b981;">22,50€</span></div>
             <div style="background:#1e293b;border-radius:8px;padding:8px;margin-bottom:6px;border:1px solid #334155;">
               <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span style="color:white;font-size:10px;font-weight:700;">Jozef</span><span style="color:var(--blue);font-size:10px;font-weight:800;">14,50€</span></div>
               <div style="color:#64748b;font-size:9px;">🍺 Pivo x2 · 🥃 Borovička x1</div>
@@ -569,8 +595,8 @@
               </div>
             </div>
             <div style="background:#1e293b;border-radius:8px;padding:8px;border:1px solid #334155;">
-              <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span style="color:white;font-size:10px;font-weight:700;">Mária</span><span style="color:var(--blue);font-size:10px;font-weight:800;">8,00€</span></div>
-              <div style="color:#64748b;font-size:9px;">🥤 Kofola x2 · 🍿 Chips x1</div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span style="color:white;font-size:10px;font-weight:700;">Ján</span><span style="color:var(--blue);font-size:10px;font-weight:800;">8,00€</span></div>
+              <div style="color:#64748b;font-size:9px;">🥤 Kofola x2 · 🚬 Marlboro x1</div>
             </div>
           </div>
         </div>
@@ -621,7 +647,7 @@
         <li>Pravidelné aktualizácie</li>
       </ul>
 
-      <a href="/app" class="btn-cta-big" onclick="return handleAppOpen(event)">🍺 Začať používať</a>
+      <a href="#" class="btn-cta-big" onclick="scrollToDownload(event)">🍺 Začať používať</a>
       <p class="price-note">Mesačné predplatné · Zrušiť kedykoľvek</p>
     </div>
   </div>
@@ -643,27 +669,214 @@
   <p>Tento prehliadač nepodporuje Google prihlásenie. Klikni na ··· → "Otvoriť v Chrome"</p>
 </div>
 
+<!-- iOS INSTALL MODAL -->
+<div class="ios-modal-overlay" id="ios-modal">
+  <div class="ios-modal">
+    <div style="text-align:center; font-size:40px; margin-bottom:8px;">📲</div>
+    <h3>Inštalácia na iPhone / iPad</h3>
+
+    <div style="background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.3); border-radius:12px; padding:12px 16px; margin-bottom:16px; display:flex; align-items:center; gap:10px;">
+      <span style="font-size:20px;">⚠️</span>
+      <p style="color:#fbbf24; font-size:13px; margin:0; line-height:1.5;">Inštalácia funguje <strong>iba cez Safari</strong>. Ak si v inom prehliadači, klikni dole na tlačidlo.</p>
+    </div>
+
+    <div class="ios-step">
+      <div class="ios-step-num">1</div>
+      <p>Klikni na ikonu <strong style="font-size:16px;">⎋</strong> <strong>Zdieľať</strong> — je v spodnej lište Safari (stred)</p>
+    </div>
+    <div class="ios-step">
+      <div class="ios-step-num">2</div>
+      <p>Posuň zoznam dole a vyber <strong>„Pridať na plochu"</strong></p>
+    </div>
+    <div class="ios-step">
+      <div class="ios-step-num">3</div>
+      <p>Klikni <strong>„Pridať"</strong> vpravo hore — hotovo, appka je na ploche! 🎉</p>
+    </div>
+
+    <a href="#" onclick="openInSafari(event)" style="display:block; width:100%; margin-top:20px; background:var(--blue); color:#0f172a; border:none; padding:14px; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; text-decoration:none; text-align:center; box-sizing:border-box;">
+      🧭 Otvoriť v Safari
+    </a>
+    <button class="ios-modal-close" onclick="closeIosModal()">Zavrieť</button>
+  </div>
+</div>
+
+<!-- PC INSTALL MODAL -->
+<div class="pc-modal-overlay" id="pc-modal">
+  <div class="pc-modal">
+    <h3>💻 Nainštaluj Na účet na PC</h3>
+    <p class="pc-sub">Chrome automaticky ponúkne inštaláciu do pár sekúnd po otvorení appky.</p>
+    <div class="pc-step">
+      <div class="pc-step-num">1</div>
+      <p>Otvor appku v <strong>Chrome</strong> na počítači</p>
+    </div>
+    <div class="pc-step">
+      <div class="pc-step-num">2</div>
+      <p>V pravom hornom rohu adresného riadka klikni na ikonu <strong>inštalácie</strong> <span style="font-size:15px;">⊕</span></p>
+    </div>
+    <div class="pc-step">
+      <div class="pc-step-num">3</div>
+      <p>Klikni <strong>„Inštalovať"</strong> — appka sa spustí ako samostatné okno</p>
+    </div>
+    <a href="/app" class="pc-open-btn" target="_blank">🚀 Otvoriť appku v Chrome</a>
+    <button class="pc-modal-close" onclick="closePcModal()">Zavrieť</button>
+  </div>
+</div>
+
 <script>
-  // ── Detekcia in-app prehliadača (Facebook, Instagram, Messenger) ──
+  // ── Otvoriť v Safari (iOS) ──
+  function openInSafari(e) {
+    e.preventDefault();
+    // Pokus otvoriť aktuálnu URL v Safari
+    window.location.href = 'x-web-search://' + window.location.href.replace('https://', '');
+    // Fallback — skopíruj URL do schránky a pouč usera
+    setTimeout(function() {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(window.location.href).then(function() {
+          alert('URL skopírovaná! Otvor Safari a vlož do adresného riadka:\n\n' + window.location.href);
+        }).catch(function() {
+          alert('Otvor Safari a zadaj:\n\n' + window.location.href);
+        });
+      } else {
+        alert('Otvor Safari a zadaj:\n\n' + window.location.href);
+      }
+    }, 500);
+  }
+
+  function handleNavInstall(e) {
+    e.preventDefault();
+    if (isIOS) { showIosModal(e); }
+    else if (isAndroid) { handleAndroid(e); }
+    else { showPcModal(e); }
+  }
+
+  // Nav scroll to download
+  function scrollToDownload(e) {
+    e.preventDefault();
+    document.querySelector('.download-btns').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // ── Detekcia prostredí ──
   var ua = navigator.userAgent;
   var isInAppBrowser = /FBAN|FBAV|Instagram|Messenger|FB_IAB/i.test(ua);
+  var isIOS = /iPhone|iPad|iPod/i.test(ua);
+  var isAndroid = /Android/i.test(ua);
+  var isMobile = isIOS || isAndroid;
 
-  // Zobraz žltý banner ak je to in-app prehliadač
+  // PWA install prompt (Android/PC Chrome)
+  var deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Zvýrazni Android tlačidlo
+    var btn = document.getElementById('btn-android');
+    if (btn) btn.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.4)';
+  });
+
+  // ── In-app browser banner ──
   if (isInAppBrowser) {
     document.getElementById('inapp-banner').style.display = 'block';
   }
 
-  // Otvorenie aplikácie — v in-app prehliadači zobraz upozornenie namiesto otvorenia
-  function handleAppOpen(e) {
+  // ── Android handler ──
+  function handleAndroid(e) {
+    e.preventDefault();
     if (isInAppBrowser) {
-      e.preventDefault();
-      var banner = document.getElementById('inapp-banner');
-      banner.style.display = 'block';
-      banner.scrollIntoView({ behavior: 'smooth' });
-      return false;
+      document.getElementById('inapp-banner').style.display = 'block';
+      document.getElementById('inapp-banner').scrollIntoView({ behavior: 'smooth' });
+      return;
     }
-    return true; // bežný prehliadač — nechaj odkaz fungovať (otvorí /app)
+    if (deferredPrompt) {
+      // Natívna PWA inštalácia
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(function(result) {
+        if (result.outcome === 'accepted') deferredPrompt = null;
+      });
+    } else if (isAndroid) {
+      // Inštalačný prompt ešte nepríšiel — otvor appku, Chrome ho zobrazí
+      window.location.href = '/app';
+    } else if (isIOS) {
+      // iOS user klikol na Android tlačidlo omylom
+      showIosModal(e);
+    } else {
+      // PC — presmeruj na PC modal
+      showPcModal(e);
+    }
   }
+
+  // ── iOS modal ──
+  function showIosModal(e) {
+    if (e) e.preventDefault();
+    document.getElementById('ios-modal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeIosModal() {
+    document.getElementById('ios-modal').classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('ios-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeIosModal();
+  });
+
+  // ── PC modal ──
+  function showPcModal(e) {
+    if (e) e.preventDefault();
+    // Ak sme na PC a máme prompt, rovno inštaluj
+    if (!isMobile && deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(function(r) {
+        if (r.outcome === 'accepted') deferredPrompt = null;
+      });
+      return;
+    }
+    document.getElementById('pc-modal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  function closePcModal() {
+    document.getElementById('pc-modal').classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('pc-modal').addEventListener('click', function(e) {
+    if (e.target === this) closePcModal();
+  });
+
+  // ── Auto-detect platform a uprav tlačidlá ──
+  (function() {
+    if (isIOS) {
+      // Na iOS skry Android, zvýrazni iOS
+      var btnA = document.getElementById('btn-android');
+      if (btnA) btnA.style.display = 'none';
+      var btnI = document.getElementById('btn-ios');
+      if (btnI) {
+        btnI.style.background = '#10b981';
+        btnI.style.borderColor = '#10b981';
+        btnI.style.color = 'white';
+      }
+    } else if (isAndroid) {
+      // Na Androide skry iOS
+      var btnI2 = document.getElementById('btn-ios');
+      if (btnI2) btnI2.style.display = 'none';
+    } else {
+      // PC — skry mobile tlačidlá, nechaj PC
+      var btnA2 = document.getElementById('btn-android');
+      var btnI3 = document.getElementById('btn-ios');
+      if (btnA2) btnA2.style.display = 'none';
+      if (btnI3) btnI3.style.display = 'none';
+      var btnP = document.getElementById('btn-pc');
+      if (btnP) {
+        btnP.style.background = '#10b981';
+        btnP.style.borderColor = '#10b981';
+        btnP.style.color = 'white';
+        btnP.style.fontSize = '16px';
+        btnP.style.padding = '16px 32px';
+      }
+    }
+  })();
+
+  // Escape key zatvára modaly
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { closeIosModal(); closePcModal(); }
+  });
 </script>
 </body>
 </html>
+
