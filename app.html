@@ -182,15 +182,10 @@
                 <button class="btn-add" onclick="addTable()">+</button>
             </div>
 
-            <h3 style="margin-top: 15px;">Pridať hosťa k stolu</h3>
-            <div class="row row-vertical">
-                <select id="newGuestTable">
-                    <option value="">-- Najprv vyber stôl --</option>
-                </select>
-                <div class="row" style="margin-bottom: 0;">
-                    <input type="text" id="newGuestName" placeholder="Meno hosťa (napr. Jozef...)">
-                    <button class="btn-add" onclick="addGuest()">+</button>
-                </div>
+            <h3 style="margin-top: 15px;">Pridať hosťa</h3>
+            <div class="row">
+                <input type="text" id="newGuestName" placeholder="Meno hosťa (napr. Jozef, Ján...)">
+                <button class="btn-add" onclick="addGuest()">+</button>
             </div>
 
             <h3 style="margin-top: 15px;">Pridať nový nápoj</h3>
@@ -214,15 +209,15 @@
                 <select id="deleteTableSelect">
                     <option value="">-- Vyber stôl na zmazanie --</option>
                 </select>
-                <button class="btn-delete-admin" onclick="deleteTableFromSystem()">Vymazať stôl (aj s hosťami)</button>
+                <button class="btn-delete-admin" onclick="deleteTableFromSystem()">Vymazať stôl</button>
             </div>
 
             <h3 style="margin-top: 15px; color: #38bdf8;">Vymazať hosťa</h3>
             <div class="row row-vertical">
-                <select id="deleteCustomerSelect">
+                <select id="deleteGuestSelect">
                     <option value="">-- Vyber hosťa na zmazanie --</option>
                 </select>
-                <button class="btn-delete-admin" onclick="deleteCustomerFromSystem()">Vymazať hosťa</button>
+                <button class="btn-delete-admin" onclick="deleteGuestFromSystem()">Vymazať hosťa</button>
             </div>
 
             <h3 style="margin-top: 15px; color: #38bdf8;">Vymazať nápoj</h3>
@@ -238,12 +233,12 @@
     <h2>Nahadzovanie objednávok</h2>
     <div class="row row-vertical" style="background: #1e293b; padding: 0px; border-radius: 10px;">
         <h3>Vyber stôl:</h3>
-        <select id="selectTable" onchange="updateGuestDropdown()">
+        <select id="selectTable">
             <option value="">-- Vyber stôl --</option>
         </select>
         <h3 style="margin-top: 5px;">Vyber hosťa:</h3>
-        <select id="selectCustomer">
-            <option value="">-- Najprv vyber stôl --</option>
+        <select id="selectGuest">
+            <option value="">-- Vyber hosťa --</option>
         </select>
         <h3 style="margin-top: 5px;">Filtrovať ponuku:</h3>
         <select id="filterCategory" onchange="updateDrinkDropdown()">
@@ -412,15 +407,17 @@ auth.onAuthStateChanged(user => {
 // ============================================================
 // 📦 STAV APLIKÁCIE (in-memory, synced z Firestore)
 // ============================================================
-let customers = [];
 let menu = [];
-let orders = {};
-let tables = [];           // zoznam názvov stolov
-let guestTable = {};       // mapovanie: meno hosťa -> názov stola
+let tables = [];        // číselník: názvy stolov
+let guests = [];        // číselník: mená hostí
+let accounts = {};      // otvorené účty: kľúč "stôl::hosť" -> { table, guest, items }
 let totalRevenue = 0;
 let totalCash = 0;
 let totalCard = 0;
 let lastPaidAccount = null;
+
+// Pomocné: kľúč účtu zo stola a hosťa
+function accKey(table, guest) { return table + '::' + guest; }
 
 // Unsubscribe funkcie pre real-time listenery
 let unsubscribeListeners = [];
@@ -464,7 +461,7 @@ async function loadAllData() {
             });
         unsubscribeListeners.push(unsubMenu);
 
-        // 3b. Stoly (real-time)
+        // 3b. Stoly — číselník (real-time)
         const unsubTables = userRef.collection('tables')
             .onSnapshot(snap => {
                 tables = snap.docs.map(d => d.data().name);
@@ -473,25 +470,31 @@ async function loadAllData() {
             });
         unsubscribeListeners.push(unsubTables);
 
-        // 4. Zákazníci + objednávky (real-time)
-        const unsubCust = userRef.collection('customers')
+        // 3c. Hostia — číselník (real-time)
+        const unsubGuests = userRef.collection('guests')
             .onSnapshot(snap => {
-                customers = snap.docs.map(d => d.data().name);
-                guestTable = {};
-                snap.docs.forEach(d => {
-                    const name = d.data().name;
-                    orders[name] = d.data().items || [];
-                    guestTable[name] = d.data().table || '';
-                });
-                // Vyčisti orders pre zmazaných zákazníkov
-                const currentNames = new Set(customers);
-                Object.keys(orders).forEach(k => {
-                    if (!currentNames.has(k)) delete orders[k];
-                });
+                guests = snap.docs.map(d => d.data().name);
                 updateDropdowns();
+            });
+        unsubscribeListeners.push(unsubGuests);
+
+        // 4. Otvorené účty (stôl + hosť + nápoje) (real-time)
+        const unsubAcc = userRef.collection('accounts')
+            .onSnapshot(snap => {
+                accounts = {};
+                snap.docs.forEach(d => {
+                    const data = d.data();
+                    if (data.table && data.guest) {
+                        accounts[accKey(data.table, data.guest)] = {
+                            table: data.table,
+                            guest: data.guest,
+                            items: data.items || []
+                        };
+                    }
+                });
                 renderAccounts();
             });
-        unsubscribeListeners.push(unsubCust);
+        unsubscribeListeners.push(unsubAcc);
 
         // Zobraz app
         setTimeout(() => {
@@ -539,32 +542,7 @@ async function saveLastPaid() {
     );
 }
 
-async function saveCustomer(name, items, table) {
-    if (!userRef) return;
-    setSyncing(true);
-    try {
-        const data = {
-            name: name,
-            items: items || [],
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        // Ak je table zadané, ulož ho; inak zachovaj existujúce priradenie
-        if (table !== undefined) {
-            data.table = table;
-        } else if (guestTable[name] !== undefined) {
-            data.table = guestTable[name];
-        }
-        await userRef.collection('customers').doc(btoa(encodeURIComponent(name))).set(data, { merge: true });
-    } finally {
-        setSyncing(false);
-    }
-}
-
-async function deleteCustomerDoc(name) {
-    if (!userRef) return;
-    await userRef.collection('customers').doc(btoa(encodeURIComponent(name))).delete();
-}
-
+// --- Číselník: stoly ---
 async function saveTable(name) {
     if (!userRef) return;
     setSyncing(true);
@@ -573,14 +551,47 @@ async function saveTable(name) {
             name: name,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-    } finally {
-        setSyncing(false);
-    }
+    } finally { setSyncing(false); }
 }
-
 async function deleteTableDoc(name) {
     if (!userRef) return;
     await userRef.collection('tables').doc(btoa(encodeURIComponent(name))).delete();
+}
+
+// --- Číselník: hostia ---
+async function saveGuest(name) {
+    if (!userRef) return;
+    setSyncing(true);
+    try {
+        await userRef.collection('guests').doc(btoa(encodeURIComponent(name))).set({
+            name: name,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } finally { setSyncing(false); }
+}
+async function deleteGuestDoc(name) {
+    if (!userRef) return;
+    await userRef.collection('guests').doc(btoa(encodeURIComponent(name))).delete();
+}
+
+// --- Otvorené účty (stôl + hosť) ---
+async function saveAccount(table, guest, items) {
+    if (!userRef) return;
+    setSyncing(true);
+    try {
+        const id = btoa(encodeURIComponent(accKey(table, guest)));
+        await userRef.collection('accounts').doc(id).set({
+            table: table,
+            guest: guest,
+            items: items || [],
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } finally { setSyncing(false); }
+}
+async function deleteAccountDoc(table, guest) {
+    if (!userRef) return;
+    const id = btoa(encodeURIComponent(accKey(table, guest)));
+    await userRef.collection('accounts').doc(id).delete();
 }
 
 async function saveDrink(drink) {
@@ -613,35 +624,31 @@ function toggleAdminPanel() {
 }
 
 function updateDropdowns() {
-    // --- Stoly: výber v objednávkach, priradenie hosťa, mazanie stola ---
+    // --- Stoly: výber v objednávkach + mazanie ---
     const selTable = document.getElementById('selectTable');
-    const newGuestTable = document.getElementById('newGuestTable');
     const delTableSel = document.getElementById('deleteTableSelect');
     const curSelTable = selTable.value;
-    const curNewGuestTable = newGuestTable.value;
 
     selTable.innerHTML = '<option value="">-- Vyber stôl --</option>';
-    newGuestTable.innerHTML = '<option value="">-- Najprv vyber stôl --</option>';
     delTableSel.innerHTML = '<option value="">-- Vyber stôl na zmazanie --</option>';
-
     tables.forEach(t => {
         selTable.innerHTML += `<option value="${t}">${t}</option>`;
-        newGuestTable.innerHTML += `<option value="${t}">${t}</option>`;
         delTableSel.innerHTML += `<option value="${t}">${t}</option>`;
     });
     selTable.value = curSelTable;
-    newGuestTable.value = curNewGuestTable;
 
-    // --- Hostia: mazanie hosťa (všetci) ---
-    const deleteCustSel = document.getElementById('deleteCustomerSelect');
-    deleteCustSel.innerHTML = '<option value="">-- Vyber hosťa na zmazanie --</option>';
-    customers.forEach(c => {
-        const t = guestTable[c] ? ` (${guestTable[c]})` : '';
-        deleteCustSel.innerHTML += `<option value="${c}">${c}${t}</option>`;
+    // --- Hostia: výber v objednávkach + mazanie ---
+    const selGuest = document.getElementById('selectGuest');
+    const delGuestSel = document.getElementById('deleteGuestSelect');
+    const curSelGuest = selGuest.value;
+
+    selGuest.innerHTML = '<option value="">-- Vyber hosťa --</option>';
+    delGuestSel.innerHTML = '<option value="">-- Vyber hosťa na zmazanie --</option>';
+    guests.forEach(g => {
+        selGuest.innerHTML += `<option value="${g}">${g}</option>`;
+        delGuestSel.innerHTML += `<option value="${g}">${g}</option>`;
     });
-
-    // --- Hostia podľa vybraného stola (v objednávkach) ---
-    updateGuestDropdown();
+    selGuest.value = curSelGuest;
 
     updateDrinkDropdown();
     updateDeleteDrinkDropdown();
@@ -653,26 +660,6 @@ function updateDropdowns() {
             quickDrinkSel.innerHTML += `<option value="${d.name}">${d.name} (${d.price.toFixed(2)}€)</option>`;
         });
     }
-}
-
-function updateGuestDropdown() {
-    const selTable = document.getElementById('selectTable');
-    const selectCust = document.getElementById('selectCustomer');
-    const chosenTable = selTable.value;
-    const currentCust = selectCust.value;
-
-    if (!chosenTable) {
-        selectCust.innerHTML = '<option value="">-- Najprv vyber stôl --</option>';
-        return;
-    }
-
-    selectCust.innerHTML = '<option value="">-- Vyber hosťa --</option>';
-    customers.forEach(c => {
-        if (guestTable[c] === chosenTable) {
-            selectCust.innerHTML += `<option value="${c}">${c}</option>`;
-        }
-    });
-    selectCust.value = currentCust;
 }
 
 function updateDrinkDropdown() {
@@ -698,7 +685,7 @@ function updateDeleteDrinkDropdown() {
 }
 
 // ============================================================
-// ➕ PRIDÁVANIE
+// ➕ PRIDÁVANIE (číselníky)
 // ============================================================
 async function addTable() {
     const input = document.getElementById('newTableName');
@@ -710,15 +697,12 @@ async function addTable() {
 }
 
 async function addGuest() {
-    const tableSel = document.getElementById('newGuestTable');
     const input = document.getElementById('newGuestName');
-    const table = tableSel.value;
     const name = input.value.trim();
-    if (!table) return alert('Najprv vyber stôl!');
     if (!name) return alert('Zadaj meno hosťa!');
-    if (customers.includes(name)) return alert('Hosť s týmto menom už existuje!');
+    if (guests.includes(name)) return alert('Hosť s týmto menom už existuje!');
     input.value = '';
-    await saveCustomer(name, [], table);
+    await saveGuest(name);
 }
 
 async function addDrink() {
@@ -742,29 +726,36 @@ async function addDrink() {
 }
 
 // ============================================================
-// ❌ MAZANIE
+// ❌ MAZANIE (číselníky)
 // ============================================================
 async function deleteTableFromSystem() {
     const table = document.getElementById('deleteTableSelect').value;
     if (!table) return alert('Vyber stôl zo zoznamu na zmazanie!');
-    const guestsAtTable = customers.filter(c => guestTable[c] === table);
-    const msg = guestsAtTable.length > 0
-        ? `Chceš zmazať stôl "${table}" aj so všetkými hosťami (${guestsAtTable.length})?`
-        : `Chceš zmazať stôl "${table}"?`;
-    if (!confirm(msg)) return;
-    // Zmaž všetkých hostí pri stole
-    for (const g of guestsAtTable) {
-        await deleteCustomerDoc(g);
+    // Zisti otvorené účty pri tomto stole
+    const openAtTable = Object.values(accounts).filter(a => a.table === table && a.items.length > 0);
+    if (openAtTable.length > 0) {
+        return alert(`Stôl "${table}" má otvorené účty (${openAtTable.length}). Najprv ich zaplať alebo vymaž.`);
+    }
+    if (!confirm(`Chceš zmazať stôl "${table}" zo zoznamu?`)) return;
+    // Zmaž prázdne účty pri stole (ak nejaké zostali)
+    for (const a of Object.values(accounts)) {
+        if (a.table === table) await deleteAccountDoc(a.table, a.guest);
     }
     await deleteTableDoc(table);
 }
 
-async function deleteCustomerFromSystem() {
-    const customer = document.getElementById('deleteCustomerSelect').value;
-    if (!customer) return alert('Vyber hosťa zo zoznamu na zmazanie!');
-    if (confirm(`Chceš úplne zmazať hosťa ${customer} zo systému?`)) {
-        await deleteCustomerDoc(customer);
+async function deleteGuestFromSystem() {
+    const guest = document.getElementById('deleteGuestSelect').value;
+    if (!guest) return alert('Vyber hosťa zo zoznamu na zmazanie!');
+    const openForGuest = Object.values(accounts).filter(a => a.guest === guest && a.items.length > 0);
+    if (openForGuest.length > 0) {
+        return alert(`Hosť "${guest}" má otvorené účty (${openForGuest.length}). Najprv ich zaplať alebo vymaž.`);
     }
+    if (!confirm(`Chceš zmazať hosťa "${guest}" zo zoznamu?`)) return;
+    for (const a of Object.values(accounts)) {
+        if (a.guest === guest) await deleteAccountDoc(a.table, a.guest);
+    }
+    await deleteGuestDoc(guest);
 }
 
 async function deleteDrinkFromSystem() {
@@ -777,49 +768,57 @@ async function deleteDrinkFromSystem() {
 }
 
 // ============================================================
-// 🍺 OBJEDNÁVKY
+// 🍺 OBJEDNÁVKY (na účet = stôl + hosť)
 // ============================================================
 async function addOrder() {
-    const customer = document.getElementById('selectCustomer').value;
+    const table = document.getElementById('selectTable').value;
+    const guest = document.getElementById('selectGuest').value;
     const drinkName = document.getElementById('selectDrink').value;
-    if (!customer || !drinkName) return alert('Vyber meno aj nápoj!');
+    if (!table) return alert('Vyber stôl!');
+    if (!guest) return alert('Vyber hosťa!');
+    if (!drinkName) return alert('Vyber nápoj!');
 
     const drink = menu.find(d => d.name === drinkName);
     if (!drink) return;
 
-    if (!orders[customer]) orders[customer] = [];
-    orders[customer].push({ name: drink.name, price: drink.price });
+    const key = accKey(table, guest);
+    const items = accounts[key] ? [...accounts[key].items] : [];
+    items.push({ name: drink.name, price: drink.price });
 
-    await saveCustomer(customer, orders[customer]);
+    await saveAccount(table, guest, items);
 }
 
-async function changeItemCount(customer, drinkName, action) {
-    if (!orders[customer]) return;
+async function changeItemCount(table, guest, drinkName, action) {
+    const key = accKey(table, guest);
+    if (!accounts[key]) return;
+    const items = [...accounts[key].items];
 
     if (action === 'plus') {
         const drink = menu.find(d => d.name === drinkName);
-        orders[customer].push({ name: drinkName, price: drink ? drink.price : 0 });
+        items.push({ name: drinkName, price: drink ? drink.price : 0 });
     } else if (action === 'minus') {
-        const index = orders[customer].map(i => i.name).lastIndexOf(drinkName);
-        if (index !== -1) orders[customer].splice(index, 1);
+        const index = items.map(i => i.name).lastIndexOf(drinkName);
+        if (index !== -1) items.splice(index, 1);
     }
 
-    await saveCustomer(customer, orders[customer]);
+    await saveAccount(table, guest, items);
 }
 
-async function closeAndPayAccount(customer, method) {
-    if (!orders[customer] || orders[customer].length === 0) return;
+async function closeAndPayAccount(table, guest, method) {
+    const key = accKey(table, guest);
+    if (!accounts[key] || accounts[key].items.length === 0) return;
+    const items = accounts[key].items;
 
     let accountTotal = 0;
-    orders[customer].forEach(item => accountTotal += item.price);
+    items.forEach(item => accountTotal += item.price);
 
     const methodText = method === 'card' ? 'Kartou' : 'Hotovosťou';
-    if (!confirm(`Naozaj zaplatiť a uzavrieť účet pre: ${customer} (${accountTotal.toFixed(2)}€)?\nSpôsob platby: ${methodText}`)) return;
+    if (!confirm(`Naozaj zaplatiť a uzavrieť účet pre: ${guest} pri ${table} (${accountTotal.toFixed(2)}€)?\nSpôsob platby: ${methodText}`)) return;
 
-    lastPaidAccount = { customer, total: accountTotal, method, items: [...orders[customer]] };
+    lastPaidAccount = { table, guest, total: accountTotal, method, items: [...items] };
 
     // Aktualizuj sold na nápojoch
-    for (const item of orders[customer]) {
+    for (const item of items) {
         const drink = menu.find(d => d.name === item.name);
         if (drink) {
             drink.sold = (drink.sold || 0) + 1;
@@ -831,10 +830,9 @@ async function closeAndPayAccount(customer, method) {
     else totalCash += accountTotal;
     totalRevenue += accountTotal;
 
-    orders[customer] = [];
-
+    // Zmaž zaplatený účet (uvoľní stôl aj hosťa)
     await Promise.all([
-        saveCustomer(customer, []),
+        deleteAccountDoc(table, guest),
         saveStats(),
         saveLastPaid()
     ]);
@@ -843,10 +841,10 @@ async function closeAndPayAccount(customer, method) {
 async function undoLastPayment() {
     if (!lastPaidAccount) return;
 
-    const { customer, total, method, items } = lastPaidAccount;
+    const { table, guest, total, method, items } = lastPaidAccount;
     const methodText = method === 'card' ? 'Kartou' : 'Hotovosťou';
 
-    if (!confirm(`Chceš stornovať poslednú platbu a vrátiť ${total.toFixed(2)}€ na účet pre ${customer} (Platené: ${methodText})?`)) return;
+    if (!confirm(`Chceš stornovať poslednú platbu a vrátiť ${total.toFixed(2)}€ na účet pre ${guest} pri ${table} (Platené: ${methodText})?`)) return;
 
     if (method === 'card') totalCard -= total;
     else totalCash -= total;
@@ -860,17 +858,19 @@ async function undoLastPayment() {
         }
     }
 
-    if (!orders[customer]) orders[customer] = [];
-    orders[customer] = orders[customer].concat(items);
+    // Vráť účet späť medzi otvorené
+    const key = accKey(table, guest);
+    const existing = accounts[key] ? accounts[key].items : [];
+    const restored = existing.concat(items);
     lastPaidAccount = null;
 
     await Promise.all([
-        saveCustomer(customer, orders[customer]),
+        saveAccount(table, guest, restored),
         saveStats(),
         saveLastPaid()
     ]);
 
-    alert('Účet bol úspešne stornovaný a vrátený medzi otvorené stoly!');
+    alert('Účet bol úspešne stornovaný a vrátený medzi otvorené účty!');
 }
 
 // ============================================================
@@ -955,17 +955,16 @@ function renderStats() {
 function renderStornoBox() {
     const box = document.getElementById('stornoBox');
     const info = document.getElementById('stornoInfo');
-    if (lastPaidAccount && lastPaidAccount.customer) {
+    if (lastPaidAccount && lastPaidAccount.guest) {
         box.style.display = 'block';
         const methodText = lastPaidAccount.method === 'card' ? 'Kartou' : 'Hotovosťou';
-        info.innerText = `Hosť: ${lastPaidAccount.customer} | Suma: ${lastPaidAccount.total.toFixed(2)}€ (${methodText})`;
+        info.innerText = `${lastPaidAccount.guest} pri ${lastPaidAccount.table} | Suma: ${lastPaidAccount.total.toFixed(2)}€ (${methodText})`;
     } else {
         box.style.display = 'none';
     }
 }
 
-function renderGuestCard(customer) {
-    const items = orders[customer] || [];
+function renderGuestCard(table, guest, items) {
     let total = 0;
     let drinkData = {};
 
@@ -983,8 +982,8 @@ function renderGuestCard(customer) {
                 <div><span class="count-badge">${info.count}ks</span><span>${drinkName}</span></div>
                 <div class="controls">
                     <span style="font-weight:600;margin-right:8px;font-size:14px;">${total2.toFixed(2)}€</span>
-                    <button class="btn-calc btn-minus" onclick="changeItemCount('${customer}','${drinkName}','minus')">−</button>
-                    <button class="btn-calc btn-plus-small" onclick="changeItemCount('${customer}','${drinkName}','plus')">+</button>
+                    <button class="btn-calc btn-minus" onclick="changeItemCount('${table}','${guest}','${drinkName}','minus')">−</button>
+                    <button class="btn-calc btn-plus-small" onclick="changeItemCount('${table}','${guest}','${drinkName}','plus')">+</button>
                 </div>
             </li>`;
     }
@@ -993,11 +992,11 @@ function renderGuestCard(customer) {
     return `
         <div class="ucet-card">
             <div class="ucet-header">
-                <span class="customer-name">${customer}</span>
+                <span class="customer-name">${guest}</span>
                 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
                     <span class="total-price">${total.toFixed(2)}€</span>
-                    <button class="btn-pay-cash" onclick="closeAndPayAccount('${customer}','cash')">💵 Hotovosť</button>
-                    <button class="btn-pay-card" onclick="closeAndPayAccount('${customer}','card')">💳 Karta</button>
+                    <button class="btn-pay-cash" onclick="closeAndPayAccount('${table}','${guest}','cash')">💵 Hotovosť</button>
+                    <button class="btn-pay-card" onclick="closeAndPayAccount('${table}','${guest}','card')">💳 Karta</button>
                 </div>
             </div>
             ${listHtml}
@@ -1009,33 +1008,29 @@ function renderAccounts() {
     container.innerHTML = '';
     let hasActiveOrders = false;
 
-    // Zoskup hostí s objednávkami podľa stola
-    const byTable = {};      // stôl -> [hostia s objednávkami]
-    const noTable = [];      // hostia bez stola (staré dáta) s objednávkami
-
-    for (const customer of customers) {
-        const items = orders[customer] || [];
-        if (items.length === 0) continue;
+    // Zoskup otvorené účty podľa stola
+    const byTable = {};   // stôl -> [{guest, items}]
+    for (const acc of Object.values(accounts)) {
+        if (!acc.items || acc.items.length === 0) continue;
         hasActiveOrders = true;
-        const t = guestTable[customer];
-        if (t && tables.includes(t)) {
-            if (!byTable[t]) byTable[t] = [];
-            byTable[t].push(customer);
-        } else {
-            noTable.push(customer);
-        }
+        if (!byTable[acc.table]) byTable[acc.table] = [];
+        byTable[acc.table].push(acc);
     }
 
     // Vykresli stoly v poradí ako sú v zozname tables
-    for (const table of tables) {
-        const guests = byTable[table];
-        if (!guests || guests.length === 0) continue;
+    const tableOrder = tables.slice();
+    // Pridaj aj stoly ktoré už nie sú v číselníku ale majú účty
+    Object.keys(byTable).forEach(t => { if (!tableOrder.includes(t)) tableOrder.push(t); });
+
+    for (const table of tableOrder) {
+        const accs = byTable[table];
+        if (!accs || accs.length === 0) continue;
 
         let tableTotal = 0;
-        guests.forEach(g => (orders[g] || []).forEach(i => tableTotal += i.price));
+        accs.forEach(a => a.items.forEach(i => tableTotal += i.price));
 
         let cardsHtml = '';
-        guests.forEach(g => { cardsHtml += renderGuestCard(g); });
+        accs.forEach(a => { cardsHtml += renderGuestCard(a.table, a.guest, a.items); });
 
         container.innerHTML += `
             <div class="table-group">
@@ -1043,17 +1038,6 @@ function renderAccounts() {
                     <span>🪑 ${table}</span>
                     <span class="table-group-total">${tableTotal.toFixed(2)}€</span>
                 </div>
-                ${cardsHtml}
-            </div>`;
-    }
-
-    // Hostia bez priradeného stola (zo starých dát)
-    if (noTable.length > 0) {
-        let cardsHtml = '';
-        noTable.forEach(g => { cardsHtml += renderGuestCard(g); });
-        container.innerHTML += `
-            <div class="table-group">
-                <div class="table-group-header"><span>❓ Bez stola</span></div>
                 ${cardsHtml}
             </div>`;
     }
