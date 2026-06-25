@@ -290,7 +290,7 @@
 // ============================================================
 const firebaseConfig = {
     apiKey: "AIzaSyDZg1od9ZlfInxHjO7Gq75NhVPxzXq6xgY",
-    authDomain: "na-ucet.vercel.app",
+    authDomain: "na-ucet.firebaseapp.com",
     projectId: "na-ucet",
     storageBucket: "na-ucet.firebasestorage.app",
     messagingSenderId: "472360103370",
@@ -330,29 +330,21 @@ function signInWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
 
-    // Detekcia: mobil ALEBO nainštalovaná PWA (standalone režim)
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-        || window.navigator.standalone === true;
-
-    if (isMobile || isStandalone) {
-        // Redirect je jediný spoľahlivý spôsob na mobile a v nainštalovanej PWA
-        auth.signInWithRedirect(provider).catch(err => {
-            alert('Chyba pri prihlásení: ' + err.message);
-        });
-    } else {
-        // Desktop prehliadač — popup funguje
-        auth.signInWithPopup(provider).catch(err => {
-            // Ak popup zlyhá (blokovaný), skús redirect
-            if (err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request') {
-                auth.signInWithRedirect(provider).catch(e => {
-                    alert('Chyba pri prihlásení: ' + e.message);
-                });
-            } else if (err.code !== 'auth/popup-closed-by-user') {
-                alert('Chyba pri prihlásení: ' + err.message);
-            }
-        });
-    }
+    // Popup funguje na desktope aj mobile a nevyžaduje redirect URI nastavenia
+    auth.signInWithPopup(provider).catch(err => {
+        // Popup zatvorený užívateľom — ignoruj
+        if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+            return;
+        }
+        // Ak je popup blokovaný (niektoré mobilné prehliadače), skús redirect ako zálohu
+        if (err.code === 'auth/popup-blocked') {
+            auth.signInWithRedirect(provider).catch(e => {
+                alert('Chyba pri prihlásení: ' + e.message);
+            });
+            return;
+        }
+        alert('Chyba pri prihlásení: ' + err.message);
+    });
 }
 
 function signOut() {
