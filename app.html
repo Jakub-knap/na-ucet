@@ -86,8 +86,107 @@
         .btn-add { background-color: #10b981; color: white; min-width: 54px; font-size: 20px; }
         .btn-add:hover { background-color: #059669; }
         .btn-add:disabled { background-color: #334155; color: #64748b; cursor: not-allowed; }
-        .btn-order-plus { background-color: #10b981; color: white; font-size: 28px; padding: 0 30px; }
-        .btn-order-plus:hover { background-color: #059669; }
+
+        /* ── 3 VEĽKÉ IKONY ── */
+        .selection-bar {
+            background: #0f172a; border: 2px solid #334155; border-radius: 10px;
+            padding: 12px 14px; color: #38bdf8; font-weight: 700; font-size: 15px;
+            text-align: center; margin-bottom: 12px;
+        }
+        .selection-bar.active { border-color: #10b981; color: #10b981; }
+        .big-actions { display: flex; flex-direction: column; gap: 10px; }
+        .big-action {
+            background: #0f172a; border: 2px solid #38bdf8; border-radius: 14px;
+            padding: 16px 18px; cursor: pointer; transition: all 0.15s;
+            display: flex; flex-direction: row; align-items: center; gap: 16px;
+            -webkit-tap-highlight-color: transparent; user-select: none;
+        }
+        .big-action:active { transform: scale(0.98); background: #1e3a5f; }
+        .big-icon { font-size: 34px; line-height: 1; }
+        .big-label { color: #f8fafc; font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .big-action .big-sub { color: #64748b; font-size: 13px; font-weight: 600; margin-left: auto; }
+        .quick-sale-btn {
+            margin-top: 12px; background: #f59e0b; color: #1e293b; border-radius: 12px;
+            padding: 16px; text-align: center; font-weight: 800; font-size: 16px; cursor: pointer;
+            transition: all 0.15s; -webkit-tap-highlight-color: transparent; user-select: none;
+        }
+        .quick-sale-btn:active { transform: scale(0.98); background: #d97706; }
+
+        /* ── MODÁLNE OKNO VÝBERU ── */
+        .picker-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+            z-index: 9000; align-items: flex-end; justify-content: center; backdrop-filter: blur(3px);
+        }
+        .picker-overlay.active { display: flex; }
+        .picker-box {
+            background: #1e293b; border-radius: 20px 20px 0 0; width: 100%; max-width: 600px;
+            max-height: 80vh; overflow-y: auto; padding: 16px 16px 28px;
+            border-top: 2px solid #38bdf8; animation: pickerUp 0.22s ease;
+        }
+        @keyframes pickerUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .picker-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 14px; position: sticky; top: 0;
+        }
+        .picker-header span { color: #38bdf8; font-size: 19px; font-weight: 800; }
+        .picker-close {
+            background: #334155; color: #f8fafc; border: none; width: 38px; height: 38px;
+            border-radius: 10px; font-size: 18px; font-weight: 700; cursor: pointer;
+        }
+        /* Potvrdzovacia lišta v okne nápojov */
+        .picker-confirm {
+            position: sticky; bottom: 0; margin-top: 14px; padding-top: 12px;
+            background: #1e293b; border-top: 1px solid #334155;
+        }
+        .btn-confirm {
+            width: 100%; background: #10b981; color: white; border: none;
+            padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 800;
+            cursor: pointer; transition: background 0.15s;
+        }
+        .btn-confirm:active { background: #059669; }
+        .btn-confirm:disabled { background: #334155; color: #64748b; cursor: default; }
+        /* Zelená kvačka na označenom nápoji */
+        .tile-check {
+            position: absolute; top: -6px; left: -6px; background: #10b981; color: white;
+            width: 24px; height: 24px; border-radius: 12px; display: flex; align-items: center;
+            justify-content: center; font-size: 14px; font-weight: 800;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+        .tile.picked { border-color: #10b981; background: #0f2e22; }
+
+        /* ── DLAŽDICE (kachličky) ── */
+        .tile-label { color: #94a3b8; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin: 14px 0 8px; }
+        .tile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(95px, 1fr)); gap: 8px; }
+        .tile-grid.guests { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+        .tile {
+            position: relative; background: #0f172a; border: 2px solid #334155; border-radius: 12px;
+            padding: 12px 8px; text-align: center; cursor: pointer; transition: all 0.15s;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 78px; user-select: none; -webkit-tap-highlight-color: transparent;
+        }
+        .tile:active { transform: scale(0.95); }
+        .tile.selected { border-color: #38bdf8; background: #1e3a5f; box-shadow: 0 0 0 1px #38bdf8; }
+        .tile-icon { font-size: 26px; line-height: 1; margin-bottom: 4px; }
+        .tile-name { color: #f8fafc; font-size: 13px; font-weight: 700; line-height: 1.2; word-break: break-word; }
+        .tile-price { color: #38bdf8; font-size: 12px; font-weight: 600; margin-top: 2px; }
+        .tile-count {
+            position: absolute; top: -6px; right: -6px; background: #10b981; color: white;
+            font-size: 12px; font-weight: 800; min-width: 22px; height: 22px; border-radius: 11px;
+            display: flex; align-items: center; justify-content: center; padding: 0 5px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+        .tile-drink { min-height: 90px; }
+        .tile-empty { color: #64748b; font-size: 14px; text-align: center; padding: 16px; grid-column: 1 / -1; }
+        .cat-section-title {
+            color: #38bdf8; font-size: 15px; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 0.5px; margin: 16px 0 8px; padding-bottom: 6px;
+            border-bottom: 2px solid #334155;
+        }
+        .cat-section-title:first-child { margin-top: 0; }
+        .cat-section { margin-bottom: 6px; }
+        .cat-tile { min-height: 56px; padding: 8px; }
+        .cat-tile .tile-icon { font-size: 20px; margin-bottom: 2px; }
+        .cat-tile .tile-name { font-size: 12px; }
         .btn-clear { background-color: #334155; color: #94a3b8; padding: 8px 14px; font-size: 13px; border-radius: 8px; font-weight: 600; }
         .btn-pay-cash { background-color: #10b981; color: white; padding: 8px 12px; font-size: 13px; border-radius: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
         .btn-pay-cash:hover { background-color: #059669; }
@@ -95,7 +194,7 @@
         .btn-pay-card:hover { background-color: #2563eb; }
         .btn-delete-admin { background-color: #0284c7; color: white; width: 100%; padding: 12px; font-size: 14px; margin-top: 4px; }
         .btn-delete-admin:hover { background-color: #0ea5e9; }
-        .btn-calc { padding: 8px 14px; font-size: 16px; border-radius: 8px; font-weight: bold; margin-left: 6px; min-width: 42px; }
+        .btn-calc { padding: 8px 0; font-size: 18px; font-weight: bold; border-radius: 8px; min-width: 40px; flex: 0 0 40px; }
         .btn-minus { background-color: #1e293b; border: 2px solid #ef4444; color: #ef4444; }
         .btn-minus:hover { background-color: #ef4444; color: white; }
         .btn-plus-small { background-color: #1e293b; border: 2px solid #10b981; color: #10b981; }
@@ -110,12 +209,21 @@
         .table-group-header { display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: #38bdf8; font-size: 17px; padding: 10px 2px; border-bottom: 2px solid #334155; margin-bottom: 4px; }
         .table-group-total { color: #10b981; font-size: 16px; }
         .table-group .ucet-card:last-child { border-bottom: none; }
-        .ucet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .customer-name { font-weight: 700; color: #f8fafc; font-size: 19px; }
-        .total-price { font-weight: 800; color: #38bdf8; font-size: 19px; background: #1e293b; padding: 4px 10px; border-radius: 8px; border: 1px solid #334155; }
+        .ucet-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .customer-name { font-weight: 700; color: #f8fafc; font-size: 19px; word-break: break-word; }
+        .total-price { font-weight: 800; color: #38bdf8; font-size: 19px; background: #1e293b; padding: 4px 10px; border-radius: 8px; border: 1px solid #334155; white-space: nowrap; }
+        .pay-row { display: flex; gap: 8px; margin-bottom: 12px; }
+        .pay-row button { flex: 1; }
+        .btn-add-more { background-color: #38bdf8; color: #0f172a; padding: 12px 8px; font-size: 14px; border-radius: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+        .btn-add-more:hover { background-color: #0ea5e9; }
+        .btn-pay-cash, .btn-pay-card { padding: 12px 8px; font-size: 14px; }
         .drink-list { list-style-type: none; }
-        .drink-item { font-size: 15px; color: #cbd5e1; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; background: #1e293b; padding: 8px 10px; border-radius: 8px; }
-        .count-badge { font-weight: 700; color: #38bdf8; background: #0f172a; padding: 2px 8px; border-radius: 6px; font-size: 13px; margin-right: 4px; }
+        .drink-item { font-size: 15px; color: #cbd5e1; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #1e293b; padding: 8px 10px; border-radius: 8px; }
+        .drink-info { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; }
+        .drink-info > span:last-child { word-break: break-word; }
+        .controls { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+        .drink-sum { font-weight: 700; font-size: 14px; color: #f8fafc; white-space: nowrap; margin-right: 2px; }
+        .count-badge { font-weight: 700; color: #38bdf8; background: #0f172a; padding: 2px 8px; border-radius: 6px; font-size: 13px; flex: 0 0 auto; }
         .stats-table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 15px; margin-bottom: 15px; }
         .stats-table th, .stats-table td { padding: 10px; text-align: left; border-bottom: 1px solid #334155; }
         .stats-table th { color: #94a3b8; font-weight: 600; font-size: 13px; text-transform: uppercase; }
@@ -192,9 +300,11 @@
             <h3 style="margin-top: 15px;">Pridať nový nápoj</h3>
             <div class="row row-vertical">
                 <select id="newDrinkCategory">
-                    <option value="Pivo">🍺 Pivo</option>
-                    <option value="Alkohol">🥃 Alkoholické nápoje</option>
-                    <option value="Nealko">🥤 Nealkoholické nápoje</option>
+                    <option value="PivoCap">🍺 Pivo čapované</option>
+                    <option value="PivoFla">🍾 Pivo fľaškové</option>
+                    <option value="Vino">🍷 Víno</option>
+                    <option value="Destilat">🥃 Destilát</option>
+                    <option value="Nealko">🥤 Nealko fľaškové</option>
                     <option value="Cigarety">🚬 Cigarety</option>
                     <option value="Ostatne">🍿 Ostatné</option>
                 </select>
@@ -232,30 +342,55 @@
     </div>
 
     <h2>Nahadzovanie objednávok</h2>
-    <div class="row row-vertical" style="background: #1e293b; padding: 0px; border-radius: 10px;">
-        <h3>Vyber stôl:</h3>
-        <select id="selectTable">
-            <option value="">-- Vyber stôl --</option>
-        </select>
-        <h3 style="margin-top: 5px;">Vyber hosťa:</h3>
-        <select id="selectGuest">
-            <option value="">-- Vyber hosťa --</option>
-        </select>
-        <h3 style="margin-top: 5px;">Filtrovať ponuku:</h3>
-        <select id="filterCategory" onchange="updateDrinkDropdown()">
-            <option value="Vsetko">✨ Všetky kategórie</option>
-            <option value="Pivo">🍺 Pivo</option>
-            <option value="Alkohol">🥃 Alkoholické nápoje</option>
-            <option value="Nealko">🥤 Nealkoholické nápoje</option>
-            <option value="Cigarety">🚬 Cigarety</option>
-            <option value="Ostatne">🍿 Ostatné</option>
-        </select>
-        <h3 style="margin-top: 5px;">Vyber nápoj a pridaj:</h3>
-        <div class="row" style="margin-bottom: 0;">
-            <select id="selectDrink">
-                <option value="">-- Najprv vyber kategóriu --</option>
-            </select>
-            <button class="btn-order-plus" onclick="addOrder()">+</button>
+    <div class="row row-vertical" style="background: #1e293b; padding: 12px; border-radius: 10px;">
+        <!-- Ukazovateľ aktuálneho výberu -->
+        <div id="selectionBar" class="selection-bar">Vyber stôl a hosťa →</div>
+
+        <!-- 3 veľké ikony -->
+        <div class="big-actions">
+            <div class="big-action" onclick="openPicker('drink')">
+                <div class="big-icon">🍺</div>
+                <div class="big-label">Nápoje</div>
+                <div class="big-sub" id="subDrink">začni tu</div>
+            </div>
+            <div class="big-action" onclick="openPicker('guest')">
+                <div class="big-icon">👤</div>
+                <div class="big-label">Hostia</div>
+                <div class="big-sub" id="subGuest">—</div>
+            </div>
+            <div class="big-action" onclick="openPicker('table')">
+                <div class="big-icon">🪑</div>
+                <div class="big-label">Stoly</div>
+                <div class="big-sub" id="subTable">—</div>
+            </div>
+        </div>
+
+        <!-- Rýchly predaj -->
+        <div class="quick-sale-btn" onclick="openQuickSale()">
+            ⚡ Rýchly predaj <span style="font-weight:600;font-size:13px;opacity:0.85;">(zaplatí hneď, bez účtu)</span>
+        </div>
+    </div>
+
+    <!-- MODÁLNE OKNO PRE VÝBER (dlaždice) -->
+    <div id="pickerOverlay" class="picker-overlay" onclick="if(event.target===this)closePicker()">
+        <div class="picker-box">
+            <div class="picker-header">
+                <span id="pickerTitle">Vyber</span>
+                <button class="picker-close" onclick="closePicker()">✕</button>
+            </div>
+            <!-- kategórie (len pri nápojoch) -->
+            <div id="pickerCategories" class="tile-grid" style="display:none; margin-bottom:10px;"></div>
+            <div id="pickerGrid"></div>
+            <div id="pickerConfirm" class="picker-confirm" style="display:none;">
+                <button class="btn-confirm" id="btnConfirm" onclick="confirmDrinks()">Potvrdiť</button>
+            </div>
+            <div id="pickerPay" class="picker-confirm" style="display:none;">
+                <div id="quickSaleTotal" style="text-align:center; color:#f8fafc; font-weight:800; font-size:18px; margin-bottom:10px;">0.00€</div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-confirm" style="background:#10b981;" onclick="quickSalePay('cash')">💵 Hotovosť</button>
+                    <button class="btn-confirm" style="background:#3b82f6;" onclick="quickSalePay('card')">💳 Karta</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -287,23 +422,7 @@
         <h3 style="color: #38bdf8; font-size:14px; border-bottom: 1px solid #334155; padding-bottom:3px;">Predaj podľa kategórií:</h3>
         <div id="statsCategoriesContainer"></div>
 
-        <h3 style="margin-top: 15px; color: #38bdf8;">Okamžitý predaj / Úprava tržby</h3>
-        <div class="row row-vertical" style="background: #1e293b; padding: 12px; border-radius: 10px; margin-top: 6px; margin-bottom: 15px; border: 1px solid #334155;">
-            <select id="quickDrinkSelect" onchange="autoFillQuickAmount()" style="margin-bottom: 6px;">
-                <option value="">-- Voľná suma (Bez konkrétneho nápoja) --</option>
-            </select>
-            <input type="number" id="quickAmountInput" step="0.10" placeholder="Suma v €..." style="margin-bottom: 6px;">
-            <div style="display: flex; gap: 8px; width: 100%;">
-                <button class="btn-pay-cash" style="flex:1;" onclick="modifyRevenue('plus', 'cash')">+ 💵 Hotovosť</button>
-                <button class="btn-pay-card" style="flex:1;" onclick="modifyRevenue('plus', 'card')">+ 💳 Karta</button>
-            </div>
-            <div style="display: flex; gap: 8px; margin-top: 4px; width: 100%;">
-                <button class="btn-calc btn-minus" style="flex:1; font-size:13px;" onclick="modifyRevenue('minus', 'cash')">Storno − 💵</button>
-                <button class="btn-calc btn-minus" style="flex:1; font-size:13px;" onclick="modifyRevenue('minus', 'card')">Storno − 💳</button>
-            </div>
-        </div>
-
-        <button class="btn-clear" style="margin-top:10px; width:100%; background:#0ea5e9; color:white; border:none; font-weight:bold;" onclick="dailyClose()">📄 Uzávierka dňa (stiahnuť PDF)</button>
+        <button class="btn-clear" style="margin-top:15px; width:100%; background:#0ea5e9; color:white; border:none; font-weight:bold;" onclick="dailyClose()">📄 Uzávierka dňa (stiahnuť PDF)</button>
         <button class="btn-clear" style="margin-top:8px; width:100%; background:#991b1b; color:white; border:none;" onclick="resetRevenue()">Vynulovať tržbu a predaje</button>
     </div>
 </div>
@@ -420,6 +539,31 @@ let lastPaidAccount = null;
 
 // Pomocné: kľúč účtu zo stola a hosťa
 function accKey(table, guest) { return table + '::' + guest; }
+
+// Stav výberu v dlaždicovom rozhraní
+let selTable = '';
+let selGuest = '';
+let selCategory = 'Vsetko';
+
+// Definícia kategórií (pre dlaždice + ikony nápojov)
+// Kategórie produktov (id sa ukladá do Firestore, name+icon sa zobrazuje)
+const CATEGORIES = [
+    { id: 'PivoCap',   icon: '🍺', name: 'Pivo čapované' },
+    { id: 'PivoFla',   icon: '🍾', name: 'Pivo fľaškové' },
+    { id: 'Vino',      icon: '🍷', name: 'Víno' },
+    { id: 'Destilat',  icon: '🥃', name: 'Destilát' },
+    { id: 'Nealko',    icon: '🥤', name: 'Nealko fľaškové' },
+    { id: 'Cigarety',  icon: '🚬', name: 'Cigarety' },
+    { id: 'Ostatne',   icon: '🍿', name: 'Ostatné' }
+];
+function catIcon(catId) {
+    const c = CATEGORIES.find(x => x.id === catId);
+    return c ? c.icon : '🍿';
+}
+function catName(catId) {
+    const c = CATEGORIES.find(x => x.id === catId);
+    return c ? c.name : 'Ostatné';
+}
 
 // Unsubscribe funkcie pre real-time listenery
 let unsubscribeListeners = [];
@@ -626,56 +770,336 @@ function toggleAdminPanel() {
 }
 
 function updateDropdowns() {
-    // --- Stoly: výber v objednávkach + mazanie ---
-    const selTable = document.getElementById('selectTable');
+    // --- Mazacie dropdowny (zostávajú v nastaveniach) ---
     const delTableSel = document.getElementById('deleteTableSelect');
-    const curSelTable = selTable.value;
-
-    selTable.innerHTML = '<option value="">-- Vyber stôl --</option>';
     delTableSel.innerHTML = '<option value="">-- Vyber stôl na zmazanie --</option>';
     tables.forEach(t => {
-        selTable.innerHTML += `<option value="${t}">${t}</option>`;
         delTableSel.innerHTML += `<option value="${t}">${t}</option>`;
     });
-    selTable.value = curSelTable;
 
-    // --- Hostia: výber v objednávkach + mazanie ---
-    const selGuest = document.getElementById('selectGuest');
     const delGuestSel = document.getElementById('deleteGuestSelect');
-    const curSelGuest = selGuest.value;
-
-    selGuest.innerHTML = '<option value="">-- Vyber hosťa --</option>';
     delGuestSel.innerHTML = '<option value="">-- Vyber hosťa na zmazanie --</option>';
     guests.forEach(g => {
-        selGuest.innerHTML += `<option value="${g}">${g}</option>`;
         delGuestSel.innerHTML += `<option value="${g}">${g}</option>`;
     });
-    selGuest.value = curSelGuest;
 
-    updateDrinkDropdown();
     updateDeleteDrinkDropdown();
 
-    const quickDrinkSel = document.getElementById('quickDrinkSelect');
-    if (quickDrinkSel) {
-        quickDrinkSel.innerHTML = '<option value="">-- Voľná suma (Bez konkrétneho nápoja) --</option>';
-        menu.forEach(d => {
-            quickDrinkSel.innerHTML += `<option value="${d.name}">${d.name} (${d.price.toFixed(2)}€)</option>`;
-        });
+    // --- Dlaždice ---
+    renderSelectionBar();
+}
+
+// Ukazovateľ výberu hore
+function renderSelectionBar() {
+    const bar = document.getElementById('selectionBar');
+    const subT = document.getElementById('subTable');
+    const subG = document.getElementById('subGuest');
+    if (subT) subT.textContent = selTable || '—';
+    if (subG) subG.textContent = selGuest || '—';
+    if (!bar) return;
+    if (selTable && selGuest) {
+        bar.textContent = `✓ ${selTable} · ${selGuest}`;
+        bar.classList.add('active');
+    } else if (selTable) {
+        bar.textContent = `${selTable} · (vyber hosťa)`;
+        bar.classList.remove('active');
+    } else if (selGuest) {
+        bar.textContent = `${selGuest} · (vyber stôl)`;
+        bar.classList.remove('active');
+    } else {
+        bar.textContent = 'Vyber stôl a hosťa →';
+        bar.classList.remove('active');
     }
 }
 
-function updateDrinkDropdown() {
-    const selectDrk = document.getElementById('selectDrink');
-    const filterCat = document.getElementById('filterCategory').value;
-    const currentDrk = selectDrk.value;
-    selectDrk.innerHTML = '<option value="">-- Vyber nápoj --</option>';
-    menu.forEach(d => {
-        const drinkCat = d.category || 'Ostatne';
-        if (filterCat === 'Vsetko' || drinkCat === filterCat) {
-            selectDrk.innerHTML += `<option value="${d.name}">${d.name} (${d.price.toFixed(2)}€)</option>`;
-        }
+// ── MODÁLNE OKNO VÝBERU ──
+let pickerMode = null; // 'table' | 'guest' | 'drink'
+let pendingDrinks = {}; // {názovNápoja: počet} — rozklikané pred potvrdením
+let quickSaleMode = false; // true = rýchly predaj (platba hneď)
+
+function openPicker(mode) {
+    pickerMode = mode;
+    quickSaleMode = false;
+    const overlay = document.getElementById('pickerOverlay');
+    const title = document.getElementById('pickerTitle');
+    const cats = document.getElementById('pickerCategories');
+    const confirmBar = document.getElementById('pickerConfirm');
+    const payBar = document.getElementById('pickerPay');
+    payBar.style.display = 'none';
+
+    if (mode === 'table') { title.textContent = '🪑 Vyber stôl'; cats.style.display = 'none'; confirmBar.style.display = 'none'; }
+    if (mode === 'guest') { title.textContent = '👤 Vyber hosťa'; cats.style.display = 'none'; confirmBar.style.display = 'none'; }
+    if (mode === 'drink') {
+        title.textContent = '🍺 Vyber nápoje';
+        cats.style.display = 'none';
+        confirmBar.style.display = 'block';
+        updateConfirmButton();
+    }
+
+    renderPickerGrid();
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+// Pridať ďalšie nápoje k už otvorenému účtu (klik ➕ Pridať na karte)
+function addToExistingAccount(table, guest) {
+    selTable = table;
+    selGuest = guest;
+    pendingDrinks = {};
+    renderSelectionBar();
+    openPicker('drink');
+}
+
+// ── RÝCHLY PREDAJ ──
+function openQuickSale() {
+    pickerMode = 'drink';
+    quickSaleMode = true;
+    pendingDrinks = {};
+    const overlay = document.getElementById('pickerOverlay');
+    document.getElementById('pickerTitle').textContent = '⚡ Rýchly predaj';
+    document.getElementById('pickerCategories').style.display = 'none';
+    document.getElementById('pickerConfirm').style.display = 'none';
+    document.getElementById('pickerPay').style.display = 'block';
+    updateQuickSaleTotal();
+    renderPickerGrid();
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function updateQuickSaleTotal() {
+    const el = document.getElementById('quickSaleTotal');
+    if (!el) return;
+    let total = 0;
+    for (const [name, count] of Object.entries(pendingDrinks)) {
+        const d = menu.find(x => x.name === name);
+        if (d) total += d.price * count;
+    }
+    el.textContent = `Spolu: ${total.toFixed(2)}€`;
+}
+
+async function quickSalePay(method) {
+    const total = Object.values(pendingDrinks).reduce((a, b) => a + b, 0);
+    if (total === 0) { alert('Vyber aspoň jeden nápoj!'); return; }
+
+    let suma = 0;
+    // Pripíš predané kusy + spočítaj sumu
+    for (const [name, count] of Object.entries(pendingDrinks)) {
+        const drink = menu.find(d => d.name === name);
+        if (!drink) continue;
+        suma += drink.price * count;
+        drink.sold = (drink.sold || 0) + count;
+        await saveDrink(drink);
+    }
+
+    // Pripíš do tržby
+    if (method === 'card') totalCard += suma;
+    else totalCash += suma;
+    totalRevenue += suma;
+
+    pendingDrinks = {};
+    await saveStats();
+    closePicker();
+
+    // Krátke potvrdenie
+    const bar = document.getElementById('selectionBar');
+    if (bar) {
+        const mt = method === 'card' ? 'kartou' : 'hotovosťou';
+        bar.textContent = `✓ Predané ${mt}: ${suma.toFixed(2)}€`;
+        bar.classList.add('active');
+        setTimeout(() => renderSelectionBar(), 2500);
+    }
+}
+
+function closePicker() {
+    document.getElementById('pickerOverlay').classList.remove('active');
+    document.body.style.overflow = '';
+    pickerMode = null;
+    quickSaleMode = false;
+}
+
+// Kategórie v okne nápojov
+function renderPickerCategories() {
+    const grid = document.getElementById('pickerCategories');
+    grid.innerHTML = '';
+    CATEGORIES.forEach(c => {
+        const sel = c.id === selCategory ? ' selected' : '';
+        grid.innerHTML += `
+            <div class="tile cat-tile${sel}" onclick="pickCategory('${c.id}')">
+                <div class="tile-icon">${c.icon}</div>
+                <div class="tile-name">${c.name}</div>
+            </div>`;
     });
-    selectDrk.value = currentDrk;
+}
+
+// Obsah okna podľa režimu
+function renderPickerGrid() {
+    const grid = document.getElementById('pickerGrid');
+    if (!grid || !pickerMode) return;
+    grid.innerHTML = '';
+
+    if (pickerMode === 'table') {
+        if (tables.length === 0) { grid.innerHTML = '<div class="tile-empty">Žiadne stoly. Pridaj ich v nastaveniach.</div>'; return; }
+        let html = '<div class="tile-grid">';
+        tables.forEach(t => {
+            const sel = t === selTable ? ' selected' : '';
+            html += `
+                <div class="tile${sel}" onclick="chooseTable('${escTile(t)}')">
+                    <div class="tile-icon">🪑</div>
+                    <div class="tile-name">${t}</div>
+                </div>`;
+        });
+        html += '</div>';
+        grid.innerHTML = html;
+    }
+    else if (pickerMode === 'guest') {
+        if (guests.length === 0) { grid.innerHTML = '<div class="tile-empty">Žiadni hostia. Pridaj ich v nastaveniach.</div>'; return; }
+        let html = '<div class="tile-grid guests">';
+        guests.forEach(g => {
+            const sel = g === selGuest ? ' selected' : '';
+            html += `
+                <div class="tile${sel}" onclick="chooseGuest('${escTile(g)}')">
+                    <div class="tile-icon">👤</div>
+                    <div class="tile-name">${g}</div>
+                </div>`;
+        });
+        html += '</div>';
+        grid.innerHTML = html;
+    }
+    else if (pickerMode === 'drink') {
+        if (menu.length === 0) { grid.innerHTML = '<div class="tile-empty">Žiadne nápoje. Pridaj ich v nastaveniach.</div>'; return; }
+        // Zobraz nápoje zoskupené do sekcií podľa kategórie (v poradí CATEGORIES)
+        let html = '';
+        CATEGORIES.forEach(cat => {
+            const drinksInCat = menu.filter(d => (d.category || 'Ostatne') === cat.id);
+            if (drinksInCat.length === 0) return; // prázdnu kategóriu preskoč
+
+            html += `<div class="cat-section-title">${cat.icon} ${cat.name}</div>`;
+            html += '<div class="tile-grid cat-section">';
+            drinksInCat.forEach(d => {
+                const cnt = pendingDrinks[d.name] || 0;
+                const picked = cnt > 0 ? ' picked' : '';
+                const check = cnt > 0 ? `<div class="tile-check">✓</div>` : '';
+                const badge = cnt > 0 ? `<div class="tile-count">${cnt}</div>` : '';
+                html += `
+                    <div class="tile tile-drink${picked}" onclick="toggleDrink('${escTile(d.name)}')" oncontextmenu="return minusDrink(event,'${escTile(d.name)}')">
+                        ${check}${badge}
+                        <div class="tile-icon">${cat.icon}</div>
+                        <div class="tile-name">${d.name}</div>
+                        <div class="tile-price">${d.price.toFixed(2)}€</div>
+                    </div>`;
+            });
+            html += '</div>';
+        });
+        grid.innerHTML = html;
+    }
+}
+
+// Escape pre apostrofy v onclick
+function escTile(s) { return String(s).replace(/'/g, "\\'"); }
+
+// ── VÝBER V OKNE ──
+function chooseTable(t) {
+    selTable = t;
+    renderSelectionBar();
+    closePicker();
+    setTimeout(() => continueFlow(), 180);
+}
+function chooseGuest(g) {
+    selGuest = g;
+    renderSelectionBar();
+    closePicker();
+    setTimeout(() => continueFlow(), 180);
+}
+function pickCategory(c) {
+    selCategory = c;
+    renderPickerCategories();
+    renderPickerGrid();
+}
+
+// Klik na nápoj = pridaj do rozklikaných (+1)
+function toggleDrink(drinkName) {
+    pendingDrinks[drinkName] = (pendingDrinks[drinkName] || 0) + 1;
+    renderPickerGrid();
+    if (quickSaleMode) updateQuickSaleTotal();
+    else updateConfirmButton();
+}
+// Dlhý podrž / pravý klik = uber (-1)
+function minusDrink(e, drinkName) {
+    e.preventDefault();
+    if (pendingDrinks[drinkName] > 0) {
+        pendingDrinks[drinkName]--;
+        if (pendingDrinks[drinkName] === 0) delete pendingDrinks[drinkName];
+        renderPickerGrid();
+        if (quickSaleMode) updateQuickSaleTotal();
+        else updateConfirmButton();
+    }
+    return false;
+}
+
+function updateConfirmButton() {
+    const btn = document.getElementById('btnConfirm');
+    if (!btn) return;
+    const total = Object.values(pendingDrinks).reduce((a, b) => a + b, 0);
+    if (total === 0) {
+        btn.textContent = 'Vyber aspoň jeden nápoj';
+        btn.disabled = true;
+    } else {
+        btn.textContent = `Potvrdiť (${total})`;
+        btn.disabled = false;
+    }
+}
+
+// Potvrdenie nápojov → pokračuj k hosťovi/stolu
+function confirmDrinks() {
+    const total = Object.values(pendingDrinks).reduce((a, b) => a + b, 0);
+    if (total === 0) return;
+    closePicker();
+    setTimeout(() => continueFlow(), 180);
+}
+
+// Riadi tok: doplní čo chýba v poradí Nápoje → Hosť → Stôl, potom uloží
+function continueFlow() {
+    const hasDrinks = Object.values(pendingDrinks).reduce((a, b) => a + b, 0) > 0;
+
+    // 1. Nemáme nápoje → vypýtaj nápoje
+    if (!hasDrinks) { openPicker('drink'); return; }
+    // 2. Nemáme hosťa → vypýtaj hosťa
+    if (!selGuest) { openPicker('guest'); return; }
+    // 3. Nemáme stôl → vypýtaj stôl
+    if (!selTable) { openPicker('table'); return; }
+
+    // 4. Máme všetko → ulož a vynuluj
+    saveOrderAndReset();
+}
+
+async function saveOrderAndReset() {
+    const key = accKey(selTable, selGuest);
+    const items = accounts[key] ? [...accounts[key].items] : [];
+    for (const [name, count] of Object.entries(pendingDrinks)) {
+        const drink = menu.find(d => d.name === name);
+        if (!drink) continue;
+        for (let i = 0; i < count; i++) {
+            items.push({ name: drink.name, price: drink.price });
+        }
+    }
+    const savedGuest = selGuest, savedTable = selTable;
+
+    // Vynuluj výber — ďalšia objednávka začína čistá
+    pendingDrinks = {};
+    selGuest = '';
+    selTable = '';
+    selCategory = 'Vsetko';
+    renderSelectionBar();
+
+    await saveAccount(savedTable, savedGuest, items);
+
+    // Krátke potvrdenie
+    const bar = document.getElementById('selectionBar');
+    if (bar) {
+        bar.textContent = `✓ Pridané: ${savedGuest} · ${savedTable}`;
+        bar.classList.add('active');
+        setTimeout(() => renderSelectionBar(), 2500);
+    }
 }
 
 function updateDeleteDrinkDropdown() {
@@ -772,24 +1196,6 @@ async function deleteDrinkFromSystem() {
 // ============================================================
 // 🍺 OBJEDNÁVKY (na účet = stôl + hosť)
 // ============================================================
-async function addOrder() {
-    const table = document.getElementById('selectTable').value;
-    const guest = document.getElementById('selectGuest').value;
-    const drinkName = document.getElementById('selectDrink').value;
-    if (!table) return alert('Vyber stôl!');
-    if (!guest) return alert('Vyber hosťa!');
-    if (!drinkName) return alert('Vyber nápoj!');
-
-    const drink = menu.find(d => d.name === drinkName);
-    if (!drink) return;
-
-    const key = accKey(table, guest);
-    const items = accounts[key] ? [...accounts[key].items] : [];
-    items.push({ name: drink.name, price: drink.price });
-
-    await saveAccount(table, guest, items);
-}
-
 async function changeItemCount(table, guest, drinkName, action) {
     const key = accKey(table, guest);
     if (!accounts[key]) return;
@@ -878,35 +1284,6 @@ async function undoLastPayment() {
 // ============================================================
 // 📊 TRŽBY
 // ============================================================
-async function modifyRevenue(action, method) {
-    const inputVal = parseFloat(document.getElementById('quickAmountInput').value);
-    const selectedDrinkName = document.getElementById('quickDrinkSelect').value;
-
-    if (isNaN(inputVal) || inputVal <= 0) return alert('Zadaj platné číslo väčšie ako 0.');
-
-    if (action === 'plus') {
-        if (method === 'card') totalCard += inputVal;
-        else totalCash += inputVal;
-        totalRevenue += inputVal;
-        if (selectedDrinkName) {
-            const drink = menu.find(d => d.name === selectedDrinkName);
-            if (drink) { drink.sold = (drink.sold || 0) + 1; await saveDrink(drink); }
-        }
-    } else {
-        if (method === 'card') totalCard -= inputVal;
-        else totalCash -= inputVal;
-        totalRevenue -= inputVal;
-        if (selectedDrinkName) {
-            const drink = menu.find(d => d.name === selectedDrinkName);
-            if (drink && drink.sold > 0) { drink.sold--; await saveDrink(drink); }
-        }
-    }
-
-    document.getElementById('quickAmountInput').value = '';
-    document.getElementById('quickDrinkSelect').value = '';
-    await saveStats();
-}
-
 async function dailyClose() {
     // Skontroluj či je čo uzavrieť
     const soldDrinks = menu.filter(d => (d.sold || 0) > 0);
@@ -1051,16 +1428,6 @@ async function resetRevenue() {
     await Promise.all([saveStats(), saveLastPaid()]);
 }
 
-function autoFillQuickAmount() {
-    const drinkName = document.getElementById('quickDrinkSelect').value;
-    if (drinkName) {
-        const drink = menu.find(d => d.name === drinkName);
-        if (drink) document.getElementById('quickAmountInput').value = drink.price;
-    } else {
-        document.getElementById('quickAmountInput').value = '';
-    }
-}
-
 // ============================================================
 // 🖥️ RENDER FUNKCIE
 // ============================================================
@@ -1072,12 +1439,10 @@ function renderStats() {
     const container = document.getElementById('statsCategoriesContainer');
     container.innerHTML = '';
 
-    const categories = { 'Pivo': '🍺 Pivo', 'Alkohol': '🥃 Alkoholické nápoje', 'Nealko': '🥤 Nealkoholické nápoje', 'Cigarety': '🚬 Cigarety', 'Ostatne': '🍿 Ostatné' };
-
-    for (const [key, label] of Object.entries(categories)) {
-        const categoryDrinks = menu.filter(d => (d.category || 'Ostatne') === key);
+    for (const cat of CATEGORIES) {
+        const categoryDrinks = menu.filter(d => (d.category || 'Ostatne') === cat.id);
         if (categoryDrinks.length > 0) {
-            let html = `<div class="cat-title">${label}</div><table class="stats-table"><thead><tr><th>Nápoj</th><th style="text-align:right;">Predané</th></tr></thead><tbody>`;
+            let html = `<div class="cat-title">${cat.icon} ${cat.name}</div><table class="stats-table"><thead><tr><th>Nápoj</th><th style="text-align:right;">Predané</th></tr></thead><tbody>`;
             categoryDrinks.forEach(d => {
                 html += `<tr><td style="font-weight:600;">${d.name} <span style="color:#64748b;font-size:12px;">(${d.price.toFixed(2)}€)</span></td><td style="color:#10b981;font-weight:bold;text-align:right;">${d.sold || 0} ks</td></tr>`;
             });
@@ -1114,9 +1479,9 @@ function renderGuestCard(table, guest, items) {
         const total2 = info.singlePrice * info.count;
         listHtml += `
             <li class="drink-item">
-                <div><span class="count-badge">${info.count}ks</span><span>${drinkName}</span></div>
+                <div class="drink-info"><span class="count-badge">${info.count}ks</span><span>${drinkName}</span></div>
                 <div class="controls">
-                    <span style="font-weight:600;margin-right:8px;font-size:14px;">${total2.toFixed(2)}€</span>
+                    <span class="drink-sum">${total2.toFixed(2)}€</span>
                     <button class="btn-calc btn-minus" onclick="changeItemCount('${table}','${guest}','${drinkName}','minus')">−</button>
                     <button class="btn-calc btn-plus-small" onclick="changeItemCount('${table}','${guest}','${drinkName}','plus')">+</button>
                 </div>
@@ -1128,17 +1493,21 @@ function renderGuestCard(table, guest, items) {
         <div class="ucet-card">
             <div class="ucet-header">
                 <span class="customer-name">${guest}</span>
-                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
-                    <span class="total-price">${total.toFixed(2)}€</span>
-                    <button class="btn-pay-cash" onclick="closeAndPayAccount('${table}','${guest}','cash')">💵 Hotovosť</button>
-                    <button class="btn-pay-card" onclick="closeAndPayAccount('${table}','${guest}','card')">💳 Karta</button>
-                </div>
+                <span class="total-price">${total.toFixed(2)}€</span>
+            </div>
+            <div class="pay-row">
+                <button class="btn-add-more" onclick="addToExistingAccount('${table}','${guest}')">➕ Pridať</button>
+                <button class="btn-pay-cash" onclick="closeAndPayAccount('${table}','${guest}','cash')">💵 Hotovosť</button>
+                <button class="btn-pay-card" onclick="closeAndPayAccount('${table}','${guest}','card')">💳 Karta</button>
             </div>
             ${listHtml}
         </div>`;
 }
 
 function renderAccounts() {
+    // Obnov počítadlá na dlaždiciach nápojov (real-time sync)
+    // Ak je otvorené okno nápojov, obnov počítadlá (real-time sync)
+    if (pickerMode === 'drink') renderPickerGrid();
     const container = document.getElementById('accountsContainer');
     container.innerHTML = '';
     let hasActiveOrders = false;
