@@ -278,6 +278,38 @@
         </div>
     </div>
 
+    <!-- Dochádzka zamestnancov -->
+    <div class="admin-accordion" id="attendanceAccordion">
+        <div class="admin-header" onclick="toggleAttendancePanel()">
+            <span>🕐 Dochádzka zamestnancov</span>
+            <span class="admin-icon" id="attendanceIcon">▼</span>
+        </div>
+        <div class="admin-content" id="attendanceContent" style="display:none;">
+            <h3>Zapísať zmenu</h3>
+            <div class="row row-vertical">
+                <select id="attendanceEmployeeSelect">
+                    <option value="">-- Vyber zamestnanca --</option>
+                </select>
+                <label style="color:#94a3b8; font-size:13px; margin-top:6px;">Dátum:</label>
+                <input type="date" id="attendanceDate">
+                <div class="row" style="margin-bottom:0; gap:8px;">
+                    <div style="flex:1;">
+                        <label style="color:#94a3b8; font-size:13px;">Príchod:</label>
+                        <input type="time" id="attendanceStart">
+                    </div>
+                    <div style="flex:1;">
+                        <label style="color:#94a3b8; font-size:13px;">Odchod:</label>
+                        <input type="time" id="attendanceEnd">
+                    </div>
+                </div>
+                <button class="btn-add" style="width:100%; margin-top:8px;" onclick="saveAttendance()">💾 Uložiť zmenu</button>
+            </div>
+
+            <h3 style="margin-top: 20px; color: #38bdf8; border-top: 1px dashed #334155; padding-top: 15px;">📋 História dochádzky</h3>
+            <div id="attendanceHistory"></div>
+        </div>
+    </div>
+
     <!-- Admin panel -->
     <div class="admin-accordion" id="adminAccordion">
         <div class="admin-header" onclick="toggleAdminPanel()">
@@ -337,6 +369,20 @@
                     <option value="">-- Vyber nápoj na zmazanie --</option>
                 </select>
                 <button class="btn-delete-admin" onclick="deleteDrinkFromSystem()">Vymazať nápoj</button>
+            </div>
+
+            <h3 style="margin-top: 25px; color: #38bdf8; border-top: 1px dashed #334155; padding-top: 15px;">👷 Pridať zamestnanca</h3>
+            <div class="row">
+                <input type="text" id="newEmployeeName" placeholder="Meno zamestnanca">
+                <button class="btn-add" onclick="addEmployee()">+</button>
+            </div>
+
+            <h3 style="margin-top: 15px; color: #38bdf8;">Vymazať zamestnanca</h3>
+            <div class="row row-vertical">
+                <select id="deleteEmployeeSelect">
+                    <option value="">-- Vyber zamestnanca na zmazanie --</option>
+                </select>
+                <button class="btn-delete-admin" onclick="deleteEmployeeFromSystem()">Vymazať zamestnanca</button>
             </div>
         </div>
     </div>
@@ -531,6 +577,8 @@ auth.onAuthStateChanged(user => {
 let menu = [];
 let tables = [];        // číselník: názvy stolov
 let guests = [];        // číselník: mená hostí
+let employees = [];     // číselník: mená zamestnancov
+let attendance = [];    // záznamy dochádzky: { id, employee, date, start, end }
 let accounts = {};      // otvorené účty: kľúč "stôl::hosť" -> { table, guest, items }
 let totalRevenue = 0;
 let totalCash = 0;
@@ -623,6 +671,22 @@ async function loadAllData() {
                 updateDropdowns();
             });
         unsubscribeListeners.push(unsubGuests);
+
+        // 3d. Zamestnanci — číselník (real-time)
+        const unsubEmployees = userRef.collection('employees')
+            .onSnapshot(snap => {
+                employees = snap.docs.map(d => d.data().name);
+                updateDropdowns();
+            });
+        unsubscribeListeners.push(unsubEmployees);
+
+        // 3e. Dochádzka — záznamy zmien (real-time)
+        const unsubAttendance = userRef.collection('attendance')
+            .onSnapshot(snap => {
+                attendance = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderAttendanceHistory();
+            });
+        unsubscribeListeners.push(unsubAttendance);
 
         // 4. Otvorené účty (stôl + hosť + nápoje) (real-time)
         const unsubAcc = userRef.collection('accounts')
@@ -784,6 +848,22 @@ function updateDropdowns() {
     });
 
     updateDeleteDrinkDropdown();
+
+    // --- Zamestnanci ---
+    const delEmpSel = document.getElementById('deleteEmployeeSelect');
+    if (delEmpSel) {
+        const cur = delEmpSel.value;
+        delEmpSel.innerHTML = '<option value="">-- Vyber zamestnanca na zmazanie --</option>';
+        employees.forEach(e => { delEmpSel.innerHTML += `<option value="${e}">${e}</option>`; });
+        delEmpSel.value = cur;
+    }
+    const attEmpSel = document.getElementById('attendanceEmployeeSelect');
+    if (attEmpSel) {
+        const cur = attEmpSel.value;
+        attEmpSel.innerHTML = '<option value="">-- Vyber zamestnanca --</option>';
+        employees.forEach(e => { attEmpSel.innerHTML += `<option value="${e}">${e}</option>`; });
+        attEmpSel.value = cur;
+    }
 
     // --- Dlaždice ---
     renderSelectionBar();
@@ -1129,6 +1209,135 @@ async function addGuest() {
     if (guests.includes(name)) return alert('Hosť s týmto menom už existuje!');
     input.value = '';
     await saveGuest(name);
+}
+
+// ── ZAMESTNANCI ──
+async function addEmployee() {
+    const input = document.getElementById('newEmployeeName');
+    const name = input.value.trim();
+    if (!name) return alert('Zadaj meno zamestnanca!');
+    if (employees.includes(name)) return alert('Zamestnanec s týmto menom už existuje!');
+    input.value = '';
+    if (!userRef) return;
+    setSyncing(true);
+    try {
+        await userRef.collection('employees').doc(btoa(encodeURIComponent(name))).set({
+            name: name,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } finally { setSyncing(false); }
+}
+
+async function deleteEmployeeFromSystem() {
+    const name = document.getElementById('deleteEmployeeSelect').value;
+    if (!name) return alert('Vyber zamestnanca zo zoznamu na zmazanie!');
+    if (!confirm(`Chceš zmazať zamestnanca "${name}"? (Jeho záznamy dochádzky zostanú.)`)) return;
+    if (!userRef) return;
+    await userRef.collection('employees').doc(btoa(encodeURIComponent(name))).delete();
+}
+
+// ── DOCHÁDZKA ──
+function toggleAttendancePanel() {
+    const content = document.getElementById('attendanceContent');
+    const icon = document.getElementById('attendanceIcon');
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        icon.textContent = '▲';
+    } else {
+        content.style.display = 'none';
+        icon.textContent = '▼';
+    }
+}
+
+// Výpočet odpracovaných hodín (odchod − príchod), zvládne aj nočnú zmenu cez polnoc
+function calcHours(start, end) {
+    if (!start || !end) return null;
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    let mins = (eh * 60 + em) - (sh * 60 + sm);
+    if (mins < 0) mins += 24 * 60; // odchod po polnoci
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return { h, m, totalMins: mins };
+}
+
+async function saveAttendance() {
+    const employee = document.getElementById('attendanceEmployeeSelect').value;
+    const date = document.getElementById('attendanceDate').value;
+    const start = document.getElementById('attendanceStart').value;
+    const end = document.getElementById('attendanceEnd').value;
+
+    if (!employee) return alert('Vyber zamestnanca!');
+    if (!date) return alert('Zadaj dátum!');
+    if (!start) return alert('Zadaj čas príchodu!');
+    if (!end) return alert('Zadaj čas odchodu!');
+
+    if (!userRef) return;
+    setSyncing(true);
+    try {
+        await userRef.collection('attendance').add({
+            employee, date, start, end,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        // Vyčisti časy (zamestnanca a dátum nechaj pre rýchle ďalšie zadanie)
+        document.getElementById('attendanceStart').value = '';
+        document.getElementById('attendanceEnd').value = '';
+        alert('✓ Zmena uložená');
+    } finally { setSyncing(false); }
+}
+
+async function deleteAttendance(id) {
+    if (!confirm('Zmazať tento záznam dochádzky?')) return;
+    if (!userRef) return;
+    await userRef.collection('attendance').doc(id).delete();
+}
+
+function renderAttendanceHistory() {
+    const container = document.getElementById('attendanceHistory');
+    if (!container) return;
+    if (attendance.length === 0) {
+        container.innerHTML = '<p style="color:#64748b; font-size:14px; text-align:center; padding:10px;">Zatiaľ žiadne záznamy.</p>';
+        return;
+    }
+    // Zoraď od najnovšieho dátumu
+    const sorted = [...attendance].sort((a, b) => {
+        if (a.date !== b.date) return b.date.localeCompare(a.date);
+        return (b.start || '').localeCompare(a.start || '');
+    });
+
+    let html = '';
+    sorted.forEach(rec => {
+        const hrs = calcHours(rec.start, rec.end);
+        const hrsText = hrs ? `${hrs.h}h ${hrs.m}min` : '—';
+        // Dátum pekne: YYYY-MM-DD → DD.MM.YYYY
+        let dateNice = rec.date;
+        if (rec.date && rec.date.includes('-')) {
+            const [y, m, d] = rec.date.split('-');
+            dateNice = `${d}.${m}.${y}`;
+        }
+        html += `
+            <div style="background:#1e293b; border-radius:8px; padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                <div style="min-width:0;">
+                    <div style="color:#f8fafc; font-weight:700; font-size:15px;">${rec.employee}</div>
+                    <div style="color:#94a3b8; font-size:13px;">${dateNice} · ${rec.start}–${rec.end}</div>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; flex:0 0 auto;">
+                    <span style="color:#10b981; font-weight:800; font-size:15px; white-space:nowrap;">${hrsText}</span>
+                    <button class="btn-calc btn-minus" style="min-width:34px; flex:0 0 34px; padding:6px 0;" onclick="deleteAttendance('${rec.id}')">✕</button>
+                </div>
+            </div>`;
+    });
+
+    // Spolu hodiny
+    const totalMins = sorted.reduce((sum, rec) => {
+        const h = calcHours(rec.start, rec.end);
+        return sum + (h ? h.totalMins : 0);
+    }, 0);
+    const th = Math.floor(totalMins / 60);
+    const tm = totalMins % 60;
+    html += `<div style="text-align:right; color:#38bdf8; font-weight:800; font-size:15px; margin-top:6px; padding-top:10px; border-top:1px solid #334155;">Spolu: ${th}h ${tm}min</div>`;
+
+    container.innerHTML = html;
 }
 
 async function addDrink() {
