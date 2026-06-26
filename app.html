@@ -105,6 +105,12 @@
         .big-icon { font-size: 34px; line-height: 1; }
         .big-label { color: #f8fafc; font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
         .big-action .big-sub { color: #64748b; font-size: 13px; font-weight: 600; margin-left: auto; }
+        .quick-sale-btn {
+            margin-top: 12px; background: #f59e0b; color: #1e293b; border-radius: 12px;
+            padding: 16px; text-align: center; font-weight: 800; font-size: 16px; cursor: pointer;
+            transition: all 0.15s; -webkit-tap-highlight-color: transparent; user-select: none;
+        }
+        .quick-sale-btn:active { transform: scale(0.98); background: #d97706; }
 
         /* ── MODÁLNE OKNO VÝBERU ── */
         .picker-overlay {
@@ -171,6 +177,13 @@
         }
         .tile-drink { min-height: 90px; }
         .tile-empty { color: #64748b; font-size: 14px; text-align: center; padding: 16px; grid-column: 1 / -1; }
+        .cat-section-title {
+            color: #38bdf8; font-size: 15px; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 0.5px; margin: 16px 0 8px; padding-bottom: 6px;
+            border-bottom: 2px solid #334155;
+        }
+        .cat-section-title:first-child { margin-top: 0; }
+        .cat-section { margin-bottom: 6px; }
         .cat-tile { min-height: 56px; padding: 8px; }
         .cat-tile .tile-icon { font-size: 20px; margin-bottom: 2px; }
         .cat-tile .tile-name { font-size: 12px; }
@@ -278,9 +291,11 @@
             <h3 style="margin-top: 15px;">Pridať nový nápoj</h3>
             <div class="row row-vertical">
                 <select id="newDrinkCategory">
-                    <option value="Pivo">🍺 Pivo</option>
-                    <option value="Alkohol">🥃 Alkoholické nápoje</option>
-                    <option value="Nealko">🥤 Nealkoholické nápoje</option>
+                    <option value="PivoCap">🍺 Pivo čapované</option>
+                    <option value="PivoFla">🍾 Pivo fľaškové</option>
+                    <option value="Vino">🍷 Víno</option>
+                    <option value="Destilat">🥃 Destilát</option>
+                    <option value="Nealko">🥤 Nealko fľaškové</option>
                     <option value="Cigarety">🚬 Cigarety</option>
                     <option value="Ostatne">🍿 Ostatné</option>
                 </select>
@@ -340,6 +355,11 @@
                 <div class="big-sub" id="subTable">—</div>
             </div>
         </div>
+
+        <!-- Rýchly predaj -->
+        <div class="quick-sale-btn" onclick="openQuickSale()">
+            ⚡ Rýchly predaj <span style="font-weight:600;font-size:13px;opacity:0.85;">(zaplatí hneď, bez účtu)</span>
+        </div>
     </div>
 
     <!-- MODÁLNE OKNO PRE VÝBER (dlaždice) -->
@@ -351,9 +371,16 @@
             </div>
             <!-- kategórie (len pri nápojoch) -->
             <div id="pickerCategories" class="tile-grid" style="display:none; margin-bottom:10px;"></div>
-            <div id="pickerGrid" class="tile-grid"></div>
+            <div id="pickerGrid"></div>
             <div id="pickerConfirm" class="picker-confirm" style="display:none;">
                 <button class="btn-confirm" id="btnConfirm" onclick="confirmDrinks()">Potvrdiť</button>
+            </div>
+            <div id="pickerPay" class="picker-confirm" style="display:none;">
+                <div id="quickSaleTotal" style="text-align:center; color:#f8fafc; font-weight:800; font-size:18px; margin-bottom:10px;">0.00€</div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-confirm" style="background:#10b981;" onclick="quickSalePay('cash')">💵 Hotovosť</button>
+                    <button class="btn-confirm" style="background:#3b82f6;" onclick="quickSalePay('card')">💳 Karta</button>
+                </div>
             </div>
         </div>
     </div>
@@ -526,17 +553,23 @@ let selGuest = '';
 let selCategory = 'Vsetko';
 
 // Definícia kategórií (pre dlaždice + ikony nápojov)
+// Kategórie produktov (id sa ukladá do Firestore, name+icon sa zobrazuje)
 const CATEGORIES = [
-    { id: 'Vsetko',   icon: '✨', name: 'Všetko' },
-    { id: 'Pivo',     icon: '🍺', name: 'Pivo' },
-    { id: 'Alkohol',  icon: '🥃', name: 'Alkohol' },
-    { id: 'Nealko',   icon: '🥤', name: 'Nealko' },
-    { id: 'Cigarety', icon: '🚬', name: 'Cigarety' },
-    { id: 'Ostatne',  icon: '🍿', name: 'Ostatné' }
+    { id: 'PivoCap',   icon: '🍺', name: 'Pivo čapované' },
+    { id: 'PivoFla',   icon: '🍾', name: 'Pivo fľaškové' },
+    { id: 'Vino',      icon: '🍷', name: 'Víno' },
+    { id: 'Destilat',  icon: '🥃', name: 'Destilát' },
+    { id: 'Nealko',    icon: '🥤', name: 'Nealko fľaškové' },
+    { id: 'Cigarety',  icon: '🚬', name: 'Cigarety' },
+    { id: 'Ostatne',   icon: '🍿', name: 'Ostatné' }
 ];
 function catIcon(catId) {
     const c = CATEGORIES.find(x => x.id === catId);
     return c ? c.icon : '🍿';
+}
+function catName(catId) {
+    const c = CATEGORIES.find(x => x.id === catId);
+    return c ? c.name : 'Ostatné';
 }
 
 // Unsubscribe funkcie pre real-time listenery
@@ -797,21 +830,24 @@ function renderSelectionBar() {
 // ── MODÁLNE OKNO VÝBERU ──
 let pickerMode = null; // 'table' | 'guest' | 'drink'
 let pendingDrinks = {}; // {názovNápoja: počet} — rozklikané pred potvrdením
+let quickSaleMode = false; // true = rýchly predaj (platba hneď)
 
 function openPicker(mode) {
     pickerMode = mode;
+    quickSaleMode = false;
     const overlay = document.getElementById('pickerOverlay');
     const title = document.getElementById('pickerTitle');
     const cats = document.getElementById('pickerCategories');
     const confirmBar = document.getElementById('pickerConfirm');
+    const payBar = document.getElementById('pickerPay');
+    payBar.style.display = 'none';
 
     if (mode === 'table') { title.textContent = '🪑 Vyber stôl'; cats.style.display = 'none'; confirmBar.style.display = 'none'; }
     if (mode === 'guest') { title.textContent = '👤 Vyber hosťa'; cats.style.display = 'none'; confirmBar.style.display = 'none'; }
     if (mode === 'drink') {
         title.textContent = '🍺 Vyber nápoje';
-        cats.style.display = 'grid';
+        cats.style.display = 'none';
         confirmBar.style.display = 'block';
-        renderPickerCategories();
         updateConfirmButton();
     }
 
@@ -820,10 +856,71 @@ function openPicker(mode) {
     document.body.style.overflow = 'hidden';
 }
 
+// ── RÝCHLY PREDAJ ──
+function openQuickSale() {
+    pickerMode = 'drink';
+    quickSaleMode = true;
+    pendingDrinks = {};
+    const overlay = document.getElementById('pickerOverlay');
+    document.getElementById('pickerTitle').textContent = '⚡ Rýchly predaj';
+    document.getElementById('pickerCategories').style.display = 'none';
+    document.getElementById('pickerConfirm').style.display = 'none';
+    document.getElementById('pickerPay').style.display = 'block';
+    updateQuickSaleTotal();
+    renderPickerGrid();
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function updateQuickSaleTotal() {
+    const el = document.getElementById('quickSaleTotal');
+    if (!el) return;
+    let total = 0;
+    for (const [name, count] of Object.entries(pendingDrinks)) {
+        const d = menu.find(x => x.name === name);
+        if (d) total += d.price * count;
+    }
+    el.textContent = `Spolu: ${total.toFixed(2)}€`;
+}
+
+async function quickSalePay(method) {
+    const total = Object.values(pendingDrinks).reduce((a, b) => a + b, 0);
+    if (total === 0) { alert('Vyber aspoň jeden nápoj!'); return; }
+
+    let suma = 0;
+    // Pripíš predané kusy + spočítaj sumu
+    for (const [name, count] of Object.entries(pendingDrinks)) {
+        const drink = menu.find(d => d.name === name);
+        if (!drink) continue;
+        suma += drink.price * count;
+        drink.sold = (drink.sold || 0) + count;
+        await saveDrink(drink);
+    }
+
+    // Pripíš do tržby
+    if (method === 'card') totalCard += suma;
+    else totalCash += suma;
+    totalRevenue += suma;
+
+    pendingDrinks = {};
+    await saveStats();
+    closePicker();
+
+    // Krátke potvrdenie
+    const bar = document.getElementById('selectionBar');
+    if (bar) {
+        const mt = method === 'card' ? 'kartou' : 'hotovosťou';
+        bar.textContent = `✓ Predané ${mt}: ${suma.toFixed(2)}€`;
+        bar.classList.add('active');
+        setTimeout(() => renderSelectionBar(), 2500);
+    }
+}
+
 function closePicker() {
     document.getElementById('pickerOverlay').classList.remove('active');
     document.body.style.overflow = '';
     pickerMode = null;
+    quickSaleMode = false;
 }
 
 // Kategórie v okne nápojov
@@ -848,46 +945,58 @@ function renderPickerGrid() {
 
     if (pickerMode === 'table') {
         if (tables.length === 0) { grid.innerHTML = '<div class="tile-empty">Žiadne stoly. Pridaj ich v nastaveniach.</div>'; return; }
+        let html = '<div class="tile-grid">';
         tables.forEach(t => {
             const sel = t === selTable ? ' selected' : '';
-            grid.innerHTML += `
+            html += `
                 <div class="tile${sel}" onclick="chooseTable('${escTile(t)}')">
                     <div class="tile-icon">🪑</div>
                     <div class="tile-name">${t}</div>
                 </div>`;
         });
+        html += '</div>';
+        grid.innerHTML = html;
     }
     else if (pickerMode === 'guest') {
         if (guests.length === 0) { grid.innerHTML = '<div class="tile-empty">Žiadni hostia. Pridaj ich v nastaveniach.</div>'; return; }
+        let html = '<div class="tile-grid guests">';
         guests.forEach(g => {
             const sel = g === selGuest ? ' selected' : '';
-            grid.innerHTML += `
+            html += `
                 <div class="tile${sel}" onclick="chooseGuest('${escTile(g)}')">
                     <div class="tile-icon">👤</div>
                     <div class="tile-name">${g}</div>
                 </div>`;
         });
+        html += '</div>';
+        grid.innerHTML = html;
     }
     else if (pickerMode === 'drink') {
-        const filtered = menu.filter(d => {
-            const cat = d.category || 'Ostatne';
-            return selCategory === 'Vsetko' || cat === selCategory;
+        if (menu.length === 0) { grid.innerHTML = '<div class="tile-empty">Žiadne nápoje. Pridaj ich v nastaveniach.</div>'; return; }
+        // Zobraz nápoje zoskupené do sekcií podľa kategórie (v poradí CATEGORIES)
+        let html = '';
+        CATEGORIES.forEach(cat => {
+            const drinksInCat = menu.filter(d => (d.category || 'Ostatne') === cat.id);
+            if (drinksInCat.length === 0) return; // prázdnu kategóriu preskoč
+
+            html += `<div class="cat-section-title">${cat.icon} ${cat.name}</div>`;
+            html += '<div class="tile-grid cat-section">';
+            drinksInCat.forEach(d => {
+                const cnt = pendingDrinks[d.name] || 0;
+                const picked = cnt > 0 ? ' picked' : '';
+                const check = cnt > 0 ? `<div class="tile-check">✓</div>` : '';
+                const badge = cnt > 0 ? `<div class="tile-count">${cnt}</div>` : '';
+                html += `
+                    <div class="tile tile-drink${picked}" onclick="toggleDrink('${escTile(d.name)}')" oncontextmenu="return minusDrink(event,'${escTile(d.name)}')">
+                        ${check}${badge}
+                        <div class="tile-icon">${cat.icon}</div>
+                        <div class="tile-name">${d.name}</div>
+                        <div class="tile-price">${d.price.toFixed(2)}€</div>
+                    </div>`;
+            });
+            html += '</div>';
         });
-        if (filtered.length === 0) { grid.innerHTML = '<div class="tile-empty">Žiadne nápoje v tejto kategórii.</div>'; return; }
-        filtered.forEach(d => {
-            const cnt = pendingDrinks[d.name] || 0;
-            const picked = cnt > 0 ? ' picked' : '';
-            const check = cnt > 0 ? `<div class="tile-check">✓</div>` : '';
-            const badge = cnt > 0 ? `<div class="tile-count">${cnt}</div>` : '';
-            const icon = catIcon(d.category || 'Ostatne');
-            grid.innerHTML += `
-                <div class="tile tile-drink${picked}" onclick="toggleDrink('${escTile(d.name)}')" oncontextmenu="return minusDrink(event,'${escTile(d.name)}')">
-                    ${check}${badge}
-                    <div class="tile-icon">${icon}</div>
-                    <div class="tile-name">${d.name}</div>
-                    <div class="tile-price">${d.price.toFixed(2)}€</div>
-                </div>`;
-        });
+        grid.innerHTML = html;
     }
 }
 
@@ -917,7 +1026,8 @@ function pickCategory(c) {
 function toggleDrink(drinkName) {
     pendingDrinks[drinkName] = (pendingDrinks[drinkName] || 0) + 1;
     renderPickerGrid();
-    updateConfirmButton();
+    if (quickSaleMode) updateQuickSaleTotal();
+    else updateConfirmButton();
 }
 // Dlhý podrž / pravý klik = uber (-1)
 function minusDrink(e, drinkName) {
@@ -926,7 +1036,8 @@ function minusDrink(e, drinkName) {
         pendingDrinks[drinkName]--;
         if (pendingDrinks[drinkName] === 0) delete pendingDrinks[drinkName];
         renderPickerGrid();
-        updateConfirmButton();
+        if (quickSaleMode) updateQuickSaleTotal();
+        else updateConfirmButton();
     }
     return false;
 }
@@ -1373,12 +1484,10 @@ function renderStats() {
     const container = document.getElementById('statsCategoriesContainer');
     container.innerHTML = '';
 
-    const categories = { 'Pivo': '🍺 Pivo', 'Alkohol': '🥃 Alkoholické nápoje', 'Nealko': '🥤 Nealkoholické nápoje', 'Cigarety': '🚬 Cigarety', 'Ostatne': '🍿 Ostatné' };
-
-    for (const [key, label] of Object.entries(categories)) {
-        const categoryDrinks = menu.filter(d => (d.category || 'Ostatne') === key);
+    for (const cat of CATEGORIES) {
+        const categoryDrinks = menu.filter(d => (d.category || 'Ostatne') === cat.id);
         if (categoryDrinks.length > 0) {
-            let html = `<div class="cat-title">${label}</div><table class="stats-table"><thead><tr><th>Nápoj</th><th style="text-align:right;">Predané</th></tr></thead><tbody>`;
+            let html = `<div class="cat-title">${cat.icon} ${cat.name}</div><table class="stats-table"><thead><tr><th>Nápoj</th><th style="text-align:right;">Predané</th></tr></thead><tbody>`;
             categoryDrinks.forEach(d => {
                 html += `<tr><td style="font-weight:600;">${d.name} <span style="color:#64748b;font-size:12px;">(${d.price.toFixed(2)}€)</span></td><td style="color:#10b981;font-weight:bold;text-align:right;">${d.sold || 0} ks</td></tr>`;
             });
