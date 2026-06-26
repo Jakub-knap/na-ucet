@@ -217,17 +217,8 @@
     .screen-content { background: #0f172a; border-radius: 14px; padding: 12px; min-height: 160px; }
     .screen-label { color: #94a3b8; font-size: 13px; font-weight: 600; text-align: center; }
 
-    /* login screen mockup */
-    .scr-login { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px 0; }
-    .scr-login-logo { width: 44px; height: 44px; border-radius: 10px; background: var(--dark3); display: flex; align-items: center; justify-content: center; font-size: 20px; }
-    .scr-login-title { color: var(--blue); font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
-    .scr-login-sub { color: #64748b; font-size: 10px; text-align: center; }
-    .scr-login-btn { background: white; border-radius: 8px; padding: 8px 14px; font-size: 10px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px; }
-
     /* orders mockup */
     .scr-order { display: flex; flex-direction: column; gap: 6px; }
-    .scr-select { background: white; border-radius: 6px; padding: 6px 8px; font-size: 9px; color: #334155; font-weight: 600; }
-    .scr-plus-btn { background: var(--green); color: white; border-radius: 6px; padding: 8px; text-align: center; font-size: 18px; font-weight: 900; }
 
     /* stats mockup */
     .scr-stat-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #1e293b; }
@@ -382,8 +373,8 @@
     <div class="features-grid">
       <div class="feature-card">
         <div class="feature-icon">📋</div>
-        <h3>Stoly a hostia</h3>
-        <p>Vytvorte stoly a hostí, priraďte nápoje jedným kliknutím. Ten istý hosť môže sedieť pri viacerých stoloch naraz.</p>
+        <h3>Rýchle nahadzovanie</h3>
+        <p>Veľké kachličky na palec — klikni nápoj, hosťa, stôl. Navrhnuté pre zhon za barom. Ten istý hosť môže sedieť pri viacerých stoloch naraz.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🔄</div>
@@ -398,12 +389,12 @@
       <div class="feature-card">
         <div class="feature-icon">🍺</div>
         <h3>Vlastné menu</h3>
-        <p>Pridajte a upravujte nápoje podľa svojho cenníka. Kategórie pivo, alkohol, nealko, cigarety a ostatné.</p>
+        <p>Pridajte nápoje podľa svojho cenníka. Kategórie pivo čapované, fľaškové, víno, destilát, nealko, cigarety a ostatné.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">↩️</div>
-        <h3>Storno platby</h3>
-        <p>Chyba sa stane. Posledná platba sa dá jedným kliknutím stornovať a vrátiť na otvorený účet.</p>
+        <div class="feature-icon">⚡</div>
+        <h3>Rýchly predaj</h3>
+        <p>Prišiel, objednal, zaplatil. Naklikajte nápoje a zaplaťte hotovosťou či kartou — bez zakladania účtu.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">📄</div>
@@ -427,15 +418,17 @@
         <div class="screen-frame">
           <div class="screen-notch"></div>
           <div class="screen-content">
-            <div class="scr-login">
-              <div class="scr-login-logo"><img src="icon-192.png" alt="logo" style="width:44px;height:44px;border-radius:10px;"></div>
-              <div class="scr-login-title">Na účet</div>
-              <div class="scr-login-sub">Barový systém pre vašu prevádzku</div>
-              <div class="scr-login-btn">🔵 Prihlásiť sa cez Google</div>
+            <div class="scr-order">
+              <div style="color:var(--blue);font-weight:800;font-size:11px;margin-bottom:6px;">Nahadzovanie objednávok</div>
+              <div style="background:#0f172a;border:1.5px solid #38bdf8;border-radius:8px;padding:8px 9px;font-size:10px;color:#f8fafc;font-weight:700;display:flex;align-items:center;gap:7px;margin-bottom:5px;"><span style="font-size:17px;">🍺</span> NÁPOJE <span style="margin-left:auto;color:#64748b;font-weight:600;">začni tu</span></div>
+              <div style="background:#0f172a;border:1.5px solid #38bdf8;border-radius:8px;padding:8px 9px;font-size:10px;color:#f8fafc;font-weight:700;display:flex;align-items:center;gap:7px;margin-bottom:5px;"><span style="font-size:17px;">👤</span> HOSTIA</div>
+              <div style="background:#0f172a;border:1.5px solid #38bdf8;border-radius:8px;padding:8px 9px;font-size:10px;color:#f8fafc;font-weight:700;display:flex;align-items:center;gap:7px;margin-bottom:7px;"><span style="font-size:17px;">🪑</span> STOLY</div>
+              <div style="background:#f59e0b;border-radius:8px;padding:9px;text-align:center;font-size:10px;color:#1e293b;font-weight:800;">⚡ Rýchly predaj</div>
+              <div style="color:#64748b;font-size:9px;margin-top:6px;text-align:center;">Klikaj kachličky — rýchlo aj v zhone</div>
             </div>
           </div>
         </div>
-        <div class="screen-label">Prihlásenie</div>
+        <div class="screen-label">Hlavná obrazovka</div>
       </div>
 
       <!-- Screen 2: Orders -->
@@ -444,12 +437,39 @@
           <div class="screen-notch"></div>
           <div class="screen-content">
             <div class="scr-order">
-              <div style="color:var(--blue);font-weight:800;font-size:11px;margin-bottom:4px;">Nahadzovanie objednávok</div>
-              <div class="scr-select">🪑 Stôl č.1</div>
-              <div class="scr-select">👤 Jozef</div>
-              <div class="scr-select">🍺 Pivo — Zlatý Bažant (3,00€)</div>
-              <div class="scr-plus-btn">+</div>
-              <div style="color:#64748b;font-size:9px;margin-top:4px;">Stôl → hosť → nápoj</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
+                <span style="color:var(--blue);font-weight:800;font-size:11px;">🍺 Vyber nápoje</span>
+                <span style="background:#334155;color:#f8fafc;width:16px;height:16px;border-radius:4px;font-size:9px;display:flex;align-items:center;justify-content:center;">✕</span>
+              </div>
+              <div style="color:var(--blue);font-weight:800;font-size:9px;border-bottom:1px solid #334155;padding-bottom:3px;margin-bottom:5px;">🍺 PIVO ČAPOVANÉ</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:7px;">
+                <div style="position:relative;background:#0f2e22;border:1.5px solid #10b981;border-radius:7px;padding:7px 4px;text-align:center;">
+                  <div style="position:absolute;top:-5px;left:-5px;background:#10b981;color:white;width:15px;height:15px;border-radius:50%;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:800;">✓</div>
+                  <div style="position:absolute;top:-5px;right:-5px;background:#10b981;color:white;width:15px;height:15px;border-radius:50%;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:800;">1</div>
+                  <div style="font-size:18px;">🍺</div>
+                  <div style="color:#f8fafc;font-size:8px;font-weight:700;">Šariš veľké</div>
+                  <div style="color:var(--blue);font-size:8px;font-weight:600;">1,80€</div>
+                </div>
+                <div style="background:#0f172a;border:1.5px solid #334155;border-radius:7px;padding:7px 4px;text-align:center;">
+                  <div style="font-size:18px;">🍺</div>
+                  <div style="color:#f8fafc;font-size:8px;font-weight:700;">Šariš malé</div>
+                  <div style="color:var(--blue);font-size:8px;font-weight:600;">1,20€</div>
+                </div>
+              </div>
+              <div style="color:var(--blue);font-weight:800;font-size:9px;border-bottom:1px solid #334155;padding-bottom:3px;margin-bottom:5px;">🍾 PIVO FĽAŠKOVÉ</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:7px;">
+                <div style="background:#0f172a;border:1.5px solid #334155;border-radius:7px;padding:7px 4px;text-align:center;">
+                  <div style="font-size:18px;">🍾</div>
+                  <div style="color:#f8fafc;font-size:8px;font-weight:700;">Radegast</div>
+                  <div style="color:var(--blue);font-size:8px;font-weight:600;">2,20€</div>
+                </div>
+                <div style="background:#0f172a;border:1.5px solid #334155;border-radius:7px;padding:7px 4px;text-align:center;">
+                  <div style="font-size:18px;">🍾</div>
+                  <div style="color:#f8fafc;font-size:8px;font-weight:700;">Zlatý bažant</div>
+                  <div style="color:var(--blue);font-size:8px;font-weight:600;">2,00€</div>
+                </div>
+              </div>
+              <div style="background:var(--green);border-radius:8px;padding:8px;text-align:center;font-size:10px;color:white;font-weight:800;">Potvrdiť (1)</div>
             </div>
           </div>
         </div>
@@ -465,7 +485,7 @@
             <div style="color:var(--blue);font-weight:800;font-size:9px;margin-bottom:4px;display:flex;justify-content:space-between;"><span>🪑 Stôl č.1</span><span style="color:#10b981;">22,50€</span></div>
             <div style="background:#1e293b;border-radius:8px;padding:8px;margin-bottom:6px;border:1px solid #334155;">
               <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span style="color:white;font-size:10px;font-weight:700;">Jozef</span><span style="color:var(--blue);font-size:10px;font-weight:800;">14,50€</span></div>
-              <div style="color:#64748b;font-size:9px;">🍺 Pivo x2 · 🥃 Borovička x1</div>
+              <div style="color:#64748b;font-size:9px;">🍺 Pivo čap. x2 · 🥃 Borovička x1</div>
               <div style="display:flex;gap:4px;margin-top:6px;">
                 <div style="background:var(--green);border-radius:4px;padding:3px 6px;font-size:8px;color:white;font-weight:700;flex:1;text-align:center;">💵</div>
                 <div style="background:#3b82f6;border-radius:4px;padding:3px 6px;font-size:8px;color:white;font-weight:700;flex:1;text-align:center;">💳</div>
