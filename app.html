@@ -214,6 +214,8 @@
         .total-price { font-weight: 800; color: #38bdf8; font-size: 19px; background: #1e293b; padding: 4px 10px; border-radius: 8px; border: 1px solid #334155; white-space: nowrap; }
         .pay-row { display: flex; gap: 8px; margin-bottom: 12px; }
         .pay-row button { flex: 1; }
+        .btn-add-more { background-color: #38bdf8; color: #0f172a; padding: 12px 8px; font-size: 14px; border-radius: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+        .btn-add-more:hover { background-color: #0ea5e9; }
         .btn-pay-cash, .btn-pay-card { padding: 12px 8px; font-size: 14px; }
         .drink-list { list-style-type: none; }
         .drink-item { font-size: 15px; color: #cbd5e1; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #1e293b; padding: 8px 10px; border-radius: 8px; }
@@ -837,6 +839,15 @@ function openPicker(mode) {
     renderPickerGrid();
     overlay.classList.add('active');
     document.body.style.overflow = 'hidden';
+}
+
+// Pridať ďalšie nápoje k už otvorenému účtu (klik ➕ Pridať na karte)
+function addToExistingAccount(table, guest) {
+    selTable = table;
+    selGuest = guest;
+    pendingDrinks = {};
+    renderSelectionBar();
+    openPicker('drink');
 }
 
 // ── RÝCHLY PREDAJ ──
@@ -1485,6 +1496,7 @@ function renderGuestCard(table, guest, items) {
                 <span class="total-price">${total.toFixed(2)}€</span>
             </div>
             <div class="pay-row">
+                <button class="btn-add-more" onclick="addToExistingAccount('${table}','${guest}')">➕ Pridať</button>
                 <button class="btn-pay-cash" onclick="closeAndPayAccount('${table}','${guest}','cash')">💵 Hotovosť</button>
                 <button class="btn-pay-card" onclick="closeAndPayAccount('${table}','${guest}','card')">💳 Karta</button>
             </div>
