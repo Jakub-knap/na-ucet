@@ -324,20 +324,20 @@
 
         <!-- 3 veľké ikony -->
         <div class="big-actions">
-            <div class="big-action" onclick="openPicker('table')">
-                <div class="big-icon">🪑</div>
-                <div class="big-label">Stoly</div>
-                <div class="big-sub" id="subTable">—</div>
+            <div class="big-action" onclick="openPicker('drink')">
+                <div class="big-icon">🍺</div>
+                <div class="big-label">Nápoje</div>
+                <div class="big-sub" id="subDrink">začni tu</div>
             </div>
             <div class="big-action" onclick="openPicker('guest')">
                 <div class="big-icon">👤</div>
                 <div class="big-label">Hostia</div>
                 <div class="big-sub" id="subGuest">—</div>
             </div>
-            <div class="big-action" onclick="openPicker('drink')">
-                <div class="big-icon">🍺</div>
-                <div class="big-label">Nápoje</div>
-                <div class="big-sub" id="subDrink">pridať</div>
+            <div class="big-action" onclick="openPicker('table')">
+                <div class="big-icon">🪑</div>
+                <div class="big-label">Stoly</div>
+                <div class="big-sub" id="subTable">—</div>
             </div>
         </div>
     </div>
@@ -811,7 +811,6 @@ function openPicker(mode) {
         title.textContent = '🍺 Vyber nápoje';
         cats.style.display = 'grid';
         confirmBar.style.display = 'block';
-        pendingDrinks = {}; // začni s prázdnym výberom
         renderPickerCategories();
         updateConfirmButton();
     }
@@ -898,18 +897,15 @@ function escTile(s) { return String(s).replace(/'/g, "\\'"); }
 // ── VÝBER V OKNE ──
 function chooseTable(t) {
     selTable = t;
-    selGuest = ''; // nový stôl → resetni hosťa
     renderSelectionBar();
     closePicker();
-    // Voľné poradie: ak chýba hosť, vypýtaj ho; inak nápoje
-    setTimeout(() => openPicker(selGuest ? 'drink' : 'guest'), 180);
+    setTimeout(() => continueFlow(), 180);
 }
 function chooseGuest(g) {
     selGuest = g;
     renderSelectionBar();
     closePicker();
-    // Voľné poradie: ak chýba stôl, vypýtaj ho; inak nápoje
-    setTimeout(() => openPicker(selTable ? 'drink' : 'table'), 180);
+    setTimeout(() => continueFlow(), 180);
 }
 function pickCategory(c) {
     selCategory = c;
@@ -948,15 +944,30 @@ function updateConfirmButton() {
     }
 }
 
-// Potvrdenie — pridá všetky rozklikané naraz
-async function confirmDrinks() {
-    // Ak chýba stôl alebo hosť, vypýtaj ich (voľné poradie)
-    if (!selTable) { alert('Vyber stôl!'); closePicker(); setTimeout(() => openPicker('table'), 180); return; }
-    if (!selGuest) { alert('Vyber hosťa!'); closePicker(); setTimeout(() => openPicker('guest'), 180); return; }
-
+// Potvrdenie nápojov → pokračuj k hosťovi/stolu
+function confirmDrinks() {
     const total = Object.values(pendingDrinks).reduce((a, b) => a + b, 0);
     if (total === 0) return;
+    closePicker();
+    setTimeout(() => continueFlow(), 180);
+}
 
+// Riadi tok: doplní čo chýba v poradí Nápoje → Hosť → Stôl, potom uloží
+function continueFlow() {
+    const hasDrinks = Object.values(pendingDrinks).reduce((a, b) => a + b, 0) > 0;
+
+    // 1. Nemáme nápoje → vypýtaj nápoje
+    if (!hasDrinks) { openPicker('drink'); return; }
+    // 2. Nemáme hosťa → vypýtaj hosťa
+    if (!selGuest) { openPicker('guest'); return; }
+    // 3. Nemáme stôl → vypýtaj stôl
+    if (!selTable) { openPicker('table'); return; }
+
+    // 4. Máme všetko → ulož a vynuluj
+    saveOrderAndReset();
+}
+
+async function saveOrderAndReset() {
     const key = accKey(selTable, selGuest);
     const items = accounts[key] ? [...accounts[key].items] : [];
     for (const [name, count] of Object.entries(pendingDrinks)) {
@@ -966,9 +977,24 @@ async function confirmDrinks() {
             items.push({ name: drink.name, price: drink.price });
         }
     }
+    const savedGuest = selGuest, savedTable = selTable;
+
+    // Vynuluj výber — ďalšia objednávka začína čistá
     pendingDrinks = {};
-    await saveAccount(selTable, selGuest, items);
-    closePicker();
+    selGuest = '';
+    selTable = '';
+    selCategory = 'Vsetko';
+    renderSelectionBar();
+
+    await saveAccount(savedTable, savedGuest, items);
+
+    // Krátke potvrdenie
+    const bar = document.getElementById('selectionBar');
+    if (bar) {
+        bar.textContent = `✓ Pridané: ${savedGuest} · ${savedTable}`;
+        bar.classList.add('active');
+        setTimeout(() => renderSelectionBar(), 2500);
+    }
 }
 
 function updateDeleteDrinkDropdown() {
