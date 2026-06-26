@@ -194,7 +194,7 @@
         .btn-pay-card:hover { background-color: #2563eb; }
         .btn-delete-admin { background-color: #0284c7; color: white; width: 100%; padding: 12px; font-size: 14px; margin-top: 4px; }
         .btn-delete-admin:hover { background-color: #0ea5e9; }
-        .btn-calc { padding: 8px 14px; font-size: 16px; border-radius: 8px; font-weight: bold; margin-left: 6px; min-width: 42px; }
+        .btn-calc { padding: 8px 0; font-size: 18px; font-weight: bold; border-radius: 8px; min-width: 40px; flex: 0 0 40px; }
         .btn-minus { background-color: #1e293b; border: 2px solid #ef4444; color: #ef4444; }
         .btn-minus:hover { background-color: #ef4444; color: white; }
         .btn-plus-small { background-color: #1e293b; border: 2px solid #10b981; color: #10b981; }
@@ -209,12 +209,19 @@
         .table-group-header { display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: #38bdf8; font-size: 17px; padding: 10px 2px; border-bottom: 2px solid #334155; margin-bottom: 4px; }
         .table-group-total { color: #10b981; font-size: 16px; }
         .table-group .ucet-card:last-child { border-bottom: none; }
-        .ucet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .customer-name { font-weight: 700; color: #f8fafc; font-size: 19px; }
-        .total-price { font-weight: 800; color: #38bdf8; font-size: 19px; background: #1e293b; padding: 4px 10px; border-radius: 8px; border: 1px solid #334155; }
+        .ucet-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .customer-name { font-weight: 700; color: #f8fafc; font-size: 19px; word-break: break-word; }
+        .total-price { font-weight: 800; color: #38bdf8; font-size: 19px; background: #1e293b; padding: 4px 10px; border-radius: 8px; border: 1px solid #334155; white-space: nowrap; }
+        .pay-row { display: flex; gap: 8px; margin-bottom: 12px; }
+        .pay-row button { flex: 1; }
+        .btn-pay-cash, .btn-pay-card { padding: 12px 8px; font-size: 14px; }
         .drink-list { list-style-type: none; }
-        .drink-item { font-size: 15px; color: #cbd5e1; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; background: #1e293b; padding: 8px 10px; border-radius: 8px; }
-        .count-badge { font-weight: 700; color: #38bdf8; background: #0f172a; padding: 2px 8px; border-radius: 6px; font-size: 13px; margin-right: 4px; }
+        .drink-item { font-size: 15px; color: #cbd5e1; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #1e293b; padding: 8px 10px; border-radius: 8px; }
+        .drink-info { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; }
+        .drink-info > span:last-child { word-break: break-word; }
+        .controls { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+        .drink-sum { font-weight: 700; font-size: 14px; color: #f8fafc; white-space: nowrap; margin-right: 2px; }
+        .count-badge { font-weight: 700; color: #38bdf8; background: #0f172a; padding: 2px 8px; border-radius: 6px; font-size: 13px; flex: 0 0 auto; }
         .stats-table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 15px; margin-bottom: 15px; }
         .stats-table th, .stats-table td { padding: 10px; text-align: left; border-bottom: 1px solid #334155; }
         .stats-table th { color: #94a3b8; font-weight: 600; font-size: 13px; text-transform: uppercase; }
@@ -1461,9 +1468,9 @@ function renderGuestCard(table, guest, items) {
         const total2 = info.singlePrice * info.count;
         listHtml += `
             <li class="drink-item">
-                <div><span class="count-badge">${info.count}ks</span><span>${drinkName}</span></div>
+                <div class="drink-info"><span class="count-badge">${info.count}ks</span><span>${drinkName}</span></div>
                 <div class="controls">
-                    <span style="font-weight:600;margin-right:8px;font-size:14px;">${total2.toFixed(2)}€</span>
+                    <span class="drink-sum">${total2.toFixed(2)}€</span>
                     <button class="btn-calc btn-minus" onclick="changeItemCount('${table}','${guest}','${drinkName}','minus')">−</button>
                     <button class="btn-calc btn-plus-small" onclick="changeItemCount('${table}','${guest}','${drinkName}','plus')">+</button>
                 </div>
@@ -1475,11 +1482,11 @@ function renderGuestCard(table, guest, items) {
         <div class="ucet-card">
             <div class="ucet-header">
                 <span class="customer-name">${guest}</span>
-                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
-                    <span class="total-price">${total.toFixed(2)}€</span>
-                    <button class="btn-pay-cash" onclick="closeAndPayAccount('${table}','${guest}','cash')">💵 Hotovosť</button>
-                    <button class="btn-pay-card" onclick="closeAndPayAccount('${table}','${guest}','card')">💳 Karta</button>
-                </div>
+                <span class="total-price">${total.toFixed(2)}€</span>
+            </div>
+            <div class="pay-row">
+                <button class="btn-pay-cash" onclick="closeAndPayAccount('${table}','${guest}','cash')">💵 Hotovosť</button>
+                <button class="btn-pay-card" onclick="closeAndPayAccount('${table}','${guest}','card')">💳 Karta</button>
             </div>
             ${listHtml}
         </div>`;
