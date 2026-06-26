@@ -86,8 +86,33 @@
         .btn-add { background-color: #10b981; color: white; min-width: 54px; font-size: 20px; }
         .btn-add:hover { background-color: #059669; }
         .btn-add:disabled { background-color: #334155; color: #64748b; cursor: not-allowed; }
-        .btn-order-plus { background-color: #10b981; color: white; font-size: 28px; padding: 0 30px; }
-        .btn-order-plus:hover { background-color: #059669; }
+
+        /* ── DLAŽDICE (kachličky) ── */
+        .tile-label { color: #94a3b8; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin: 14px 0 8px; }
+        .tile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(95px, 1fr)); gap: 8px; }
+        .tile-grid.guests { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+        .tile {
+            position: relative; background: #0f172a; border: 2px solid #334155; border-radius: 12px;
+            padding: 12px 8px; text-align: center; cursor: pointer; transition: all 0.15s;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 78px; user-select: none; -webkit-tap-highlight-color: transparent;
+        }
+        .tile:active { transform: scale(0.95); }
+        .tile.selected { border-color: #38bdf8; background: #1e3a5f; box-shadow: 0 0 0 1px #38bdf8; }
+        .tile-icon { font-size: 26px; line-height: 1; margin-bottom: 4px; }
+        .tile-name { color: #f8fafc; font-size: 13px; font-weight: 700; line-height: 1.2; word-break: break-word; }
+        .tile-price { color: #38bdf8; font-size: 12px; font-weight: 600; margin-top: 2px; }
+        .tile-count {
+            position: absolute; top: -6px; right: -6px; background: #10b981; color: white;
+            font-size: 12px; font-weight: 800; min-width: 22px; height: 22px; border-radius: 11px;
+            display: flex; align-items: center; justify-content: center; padding: 0 5px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+        .tile-drink { min-height: 90px; }
+        .tile-empty { color: #64748b; font-size: 14px; text-align: center; padding: 16px; grid-column: 1 / -1; }
+        .cat-tile { min-height: 56px; padding: 8px; }
+        .cat-tile .tile-icon { font-size: 20px; margin-bottom: 2px; }
+        .cat-tile .tile-name { font-size: 12px; }
         .btn-clear { background-color: #334155; color: #94a3b8; padding: 8px 14px; font-size: 13px; border-radius: 8px; font-weight: 600; }
         .btn-pay-cash { background-color: #10b981; color: white; padding: 8px 12px; font-size: 13px; border-radius: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
         .btn-pay-cash:hover { background-color: #059669; }
@@ -232,31 +257,18 @@
     </div>
 
     <h2>Nahadzovanie objednávok</h2>
-    <div class="row row-vertical" style="background: #1e293b; padding: 0px; border-radius: 10px;">
-        <h3>Vyber stôl:</h3>
-        <select id="selectTable">
-            <option value="">-- Vyber stôl --</option>
-        </select>
-        <h3 style="margin-top: 5px;">Vyber hosťa:</h3>
-        <select id="selectGuest">
-            <option value="">-- Vyber hosťa --</option>
-        </select>
-        <h3 style="margin-top: 5px;">Filtrovať ponuku:</h3>
-        <select id="filterCategory" onchange="updateDrinkDropdown()">
-            <option value="Vsetko">✨ Všetky kategórie</option>
-            <option value="Pivo">🍺 Pivo</option>
-            <option value="Alkohol">🥃 Alkoholické nápoje</option>
-            <option value="Nealko">🥤 Nealkoholické nápoje</option>
-            <option value="Cigarety">🚬 Cigarety</option>
-            <option value="Ostatne">🍿 Ostatné</option>
-        </select>
-        <h3 style="margin-top: 5px;">Vyber nápoj a pridaj:</h3>
-        <div class="row" style="margin-bottom: 0;">
-            <select id="selectDrink">
-                <option value="">-- Najprv vyber kategóriu --</option>
-            </select>
-            <button class="btn-order-plus" onclick="addOrder()">+</button>
-        </div>
+    <div class="row row-vertical" style="background: #1e293b; padding: 12px; border-radius: 10px;">
+        <div class="tile-label">1. Vyber stôl</div>
+        <div class="tile-grid" id="tablesGrid"></div>
+
+        <div class="tile-label">2. Vyber hosťa</div>
+        <div class="tile-grid guests" id="guestsGrid"></div>
+
+        <div class="tile-label">3. Filtruj kategóriu</div>
+        <div class="tile-grid" id="categoryGrid"></div>
+
+        <div class="tile-label">4. Klikni nápoj — hneď sa pridá</div>
+        <div class="tile-grid" id="drinksGrid"></div>
     </div>
 
     <h2>📋 Otvorené účty (Aktuálne stoly)</h2>
@@ -420,6 +432,25 @@ let lastPaidAccount = null;
 
 // Pomocné: kľúč účtu zo stola a hosťa
 function accKey(table, guest) { return table + '::' + guest; }
+
+// Stav výberu v dlaždicovom rozhraní
+let selTable = '';
+let selGuest = '';
+let selCategory = 'Vsetko';
+
+// Definícia kategórií (pre dlaždice + ikony nápojov)
+const CATEGORIES = [
+    { id: 'Vsetko',   icon: '✨', name: 'Všetko' },
+    { id: 'Pivo',     icon: '🍺', name: 'Pivo' },
+    { id: 'Alkohol',  icon: '🥃', name: 'Alkohol' },
+    { id: 'Nealko',   icon: '🥤', name: 'Nealko' },
+    { id: 'Cigarety', icon: '🚬', name: 'Cigarety' },
+    { id: 'Ostatne',  icon: '🍿', name: 'Ostatné' }
+];
+function catIcon(catId) {
+    const c = CATEGORIES.find(x => x.id === catId);
+    return c ? c.icon : '🍿';
+}
 
 // Unsubscribe funkcie pre real-time listenery
 let unsubscribeListeners = [];
@@ -626,33 +657,19 @@ function toggleAdminPanel() {
 }
 
 function updateDropdowns() {
-    // --- Stoly: výber v objednávkach + mazanie ---
-    const selTable = document.getElementById('selectTable');
+    // --- Mazacie dropdowny (zostávajú v nastaveniach) ---
     const delTableSel = document.getElementById('deleteTableSelect');
-    const curSelTable = selTable.value;
-
-    selTable.innerHTML = '<option value="">-- Vyber stôl --</option>';
     delTableSel.innerHTML = '<option value="">-- Vyber stôl na zmazanie --</option>';
     tables.forEach(t => {
-        selTable.innerHTML += `<option value="${t}">${t}</option>`;
         delTableSel.innerHTML += `<option value="${t}">${t}</option>`;
     });
-    selTable.value = curSelTable;
 
-    // --- Hostia: výber v objednávkach + mazanie ---
-    const selGuest = document.getElementById('selectGuest');
     const delGuestSel = document.getElementById('deleteGuestSelect');
-    const curSelGuest = selGuest.value;
-
-    selGuest.innerHTML = '<option value="">-- Vyber hosťa --</option>';
     delGuestSel.innerHTML = '<option value="">-- Vyber hosťa na zmazanie --</option>';
     guests.forEach(g => {
-        selGuest.innerHTML += `<option value="${g}">${g}</option>`;
         delGuestSel.innerHTML += `<option value="${g}">${g}</option>`;
     });
-    selGuest.value = curSelGuest;
 
-    updateDrinkDropdown();
     updateDeleteDrinkDropdown();
 
     const quickDrinkSel = document.getElementById('quickDrinkSelect');
@@ -662,20 +679,144 @@ function updateDropdowns() {
             quickDrinkSel.innerHTML += `<option value="${d.name}">${d.name} (${d.price.toFixed(2)}€)</option>`;
         });
     }
+
+    // --- Dlaždice ---
+    renderTilesAll();
 }
 
-function updateDrinkDropdown() {
-    const selectDrk = document.getElementById('selectDrink');
-    const filterCat = document.getElementById('filterCategory').value;
-    const currentDrk = selectDrk.value;
-    selectDrk.innerHTML = '<option value="">-- Vyber nápoj --</option>';
-    menu.forEach(d => {
-        const drinkCat = d.category || 'Ostatne';
-        if (filterCat === 'Vsetko' || drinkCat === filterCat) {
-            selectDrk.innerHTML += `<option value="${d.name}">${d.name} (${d.price.toFixed(2)}€)</option>`;
-        }
+// Vykreslí všetky dlaždicové mriežky
+function renderTilesAll() {
+    renderTableTiles();
+    renderGuestTiles();
+    renderCategoryTiles();
+    renderDrinkTiles();
+}
+
+// Dlaždice STOLOV
+function renderTableTiles() {
+    const grid = document.getElementById('tablesGrid');
+    if (!grid) return;
+    if (tables.length === 0) {
+        grid.innerHTML = '<div class="tile-empty">Žiadne stoly. Pridaj ich v nastaveniach.</div>';
+        return;
+    }
+    grid.innerHTML = '';
+    tables.forEach(t => {
+        const sel = t === selTable ? ' selected' : '';
+        grid.innerHTML += `
+            <div class="tile${sel}" onclick="pickTable('${escTile(t)}')">
+                <div class="tile-icon">🪑</div>
+                <div class="tile-name">${t}</div>
+            </div>`;
     });
-    selectDrk.value = currentDrk;
+}
+
+// Dlaždice HOSTÍ
+function renderGuestTiles() {
+    const grid = document.getElementById('guestsGrid');
+    if (!grid) return;
+    if (!selTable) {
+        grid.innerHTML = '<div class="tile-empty">Najprv vyber stôl.</div>';
+        return;
+    }
+    if (guests.length === 0) {
+        grid.innerHTML = '<div class="tile-empty">Žiadni hostia. Pridaj ich v nastaveniach.</div>';
+        return;
+    }
+    grid.innerHTML = '';
+    guests.forEach(g => {
+        const sel = g === selGuest ? ' selected' : '';
+        grid.innerHTML += `
+            <div class="tile${sel}" onclick="pickGuest('${escTile(g)}')">
+                <div class="tile-icon">👤</div>
+                <div class="tile-name">${g}</div>
+            </div>`;
+    });
+}
+
+// Dlaždice KATEGÓRIÍ
+function renderCategoryTiles() {
+    const grid = document.getElementById('categoryGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    CATEGORIES.forEach(c => {
+        const sel = c.id === selCategory ? ' selected' : '';
+        grid.innerHTML += `
+            <div class="tile cat-tile${sel}" onclick="pickCategory('${c.id}')">
+                <div class="tile-icon">${c.icon}</div>
+                <div class="tile-name">${c.name}</div>
+            </div>`;
+    });
+}
+
+// Dlaždice NÁPOJOV
+function renderDrinkTiles() {
+    const grid = document.getElementById('drinksGrid');
+    if (!grid) return;
+
+    // Aktuálny účet (pre počítadlá)
+    const key = (selTable && selGuest) ? accKey(selTable, selGuest) : null;
+    const items = key && accounts[key] ? accounts[key].items : [];
+    const counts = {};
+    items.forEach(i => { counts[i.name] = (counts[i.name] || 0) + 1; });
+
+    const filtered = menu.filter(d => {
+        const cat = d.category || 'Ostatne';
+        return selCategory === 'Vsetko' || cat === selCategory;
+    });
+
+    if (filtered.length === 0) {
+        grid.innerHTML = '<div class="tile-empty">Žiadne nápoje v tejto kategórii. Pridaj ich v nastaveniach.</div>';
+        return;
+    }
+
+    grid.innerHTML = '';
+    filtered.forEach(d => {
+        const cnt = counts[d.name] || 0;
+        const badge = cnt > 0 ? `<div class="tile-count">${cnt}</div>` : '';
+        const icon = catIcon(d.category || 'Ostatne');
+        grid.innerHTML += `
+            <div class="tile tile-drink" onclick="tapDrink('${escTile(d.name)}')">
+                ${badge}
+                <div class="tile-icon">${icon}</div>
+                <div class="tile-name">${d.name}</div>
+                <div class="tile-price">${d.price.toFixed(2)}€</div>
+            </div>`;
+    });
+}
+
+// Escape pre apostrofy v onclick
+function escTile(s) { return String(s).replace(/'/g, "\\'"); }
+
+// --- Akcie dlaždíc ---
+function pickTable(t) {
+    selTable = (selTable === t) ? '' : t;  // druhý klik zruší
+    if (!selTable) selGuest = '';
+    renderTilesAll();
+}
+function pickGuest(g) {
+    if (!selTable) { alert('Najprv vyber stôl!'); return; }
+    selGuest = (selGuest === g) ? '' : g;
+    renderTilesAll();
+}
+function pickCategory(c) {
+    selCategory = c;
+    renderCategoryTiles();
+    renderDrinkTiles();
+}
+async function tapDrink(drinkName) {
+    if (!selTable) { alert('Najprv vyber stôl!'); return; }
+    if (!selGuest) { alert('Vyber hosťa!'); return; }
+    const drink = menu.find(d => d.name === drinkName);
+    if (!drink) return;
+
+    const key = accKey(selTable, selGuest);
+    const items = accounts[key] ? [...accounts[key].items] : [];
+    items.push({ name: drink.name, price: drink.price });
+
+    await saveAccount(selTable, selGuest, items);
+    // počítadlo sa obnoví cez real-time listener (renderAccounts → ale dlaždice obnovíme hneď)
+    renderDrinkTiles();
 }
 
 function updateDeleteDrinkDropdown() {
@@ -772,24 +913,6 @@ async function deleteDrinkFromSystem() {
 // ============================================================
 // 🍺 OBJEDNÁVKY (na účet = stôl + hosť)
 // ============================================================
-async function addOrder() {
-    const table = document.getElementById('selectTable').value;
-    const guest = document.getElementById('selectGuest').value;
-    const drinkName = document.getElementById('selectDrink').value;
-    if (!table) return alert('Vyber stôl!');
-    if (!guest) return alert('Vyber hosťa!');
-    if (!drinkName) return alert('Vyber nápoj!');
-
-    const drink = menu.find(d => d.name === drinkName);
-    if (!drink) return;
-
-    const key = accKey(table, guest);
-    const items = accounts[key] ? [...accounts[key].items] : [];
-    items.push({ name: drink.name, price: drink.price });
-
-    await saveAccount(table, guest, items);
-}
-
 async function changeItemCount(table, guest, drinkName, action) {
     const key = accKey(table, guest);
     if (!accounts[key]) return;
@@ -1139,6 +1262,8 @@ function renderGuestCard(table, guest, items) {
 }
 
 function renderAccounts() {
+    // Obnov počítadlá na dlaždiciach nápojov (real-time sync)
+    if (typeof renderDrinkTiles === 'function') renderDrinkTiles();
     const container = document.getElementById('accountsContainer');
     container.innerHTML = '';
     let hasActiveOrders = false;
