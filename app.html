@@ -72,7 +72,7 @@
         .admin-header:hover { background: #334155; }
         .admin-icon { font-size: 14px; transition: transform 0.3s ease; }
         .admin-content { padding: 0 16px; max-height: 0; opacity: 0; overflow: hidden; transition: all 0.3s ease-in-out; background: #111827; }
-        .admin-accordion.open .admin-content { padding: 16px; max-height: 1000px; opacity: 1; }
+        .admin-accordion.open .admin-content { padding: 16px; max-height: 3000px; opacity: 1; }
         .admin-accordion.open .admin-icon { transform: rotate(180deg); }
 
         .row { display: flex; gap: 10px; margin-bottom: 12px; width: 100%; }
@@ -284,7 +284,7 @@
             <span>🕐 Dochádzka zamestnancov</span>
             <span class="admin-icon" id="attendanceIcon">▼</span>
         </div>
-        <div class="admin-content" id="attendanceContent" style="display:none;">
+        <div class="admin-content" id="attendanceContent">
             <h3>Zapísať zmenu</h3>
             <div class="row row-vertical">
                 <select id="attendanceEmployeeSelect">
@@ -1238,15 +1238,10 @@ async function deleteEmployeeFromSystem() {
 
 // ── DOCHÁDZKA ──
 function toggleAttendancePanel() {
-    const content = document.getElementById('attendanceContent');
+    document.getElementById('attendanceAccordion').classList.toggle('open');
     const icon = document.getElementById('attendanceIcon');
-    if (content.style.display === 'none') {
-        content.style.display = 'block';
-        icon.textContent = '▲';
-    } else {
-        content.style.display = 'none';
-        icon.textContent = '▼';
-    }
+    const isOpen = document.getElementById('attendanceAccordion').classList.contains('open');
+    icon.textContent = isOpen ? '▲' : '▼';
 }
 
 // Výpočet odpracovaných hodín (odchod − príchod), zvládne aj nočnú zmenu cez polnoc
