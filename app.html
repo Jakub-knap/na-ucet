@@ -235,6 +235,48 @@
         .sync-dot.syncing { background: #f59e0b; animation: pulse 1s infinite; }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
         .sync-status { font-size: 11px; color: #64748b; display: flex; align-items: center; }
+
+        /* Picker guest header buttons */
+        .picker-guest-actions { display: flex; gap: 8px; margin-bottom: 12px; }
+        .btn-guest-new { background: #10b981; color: white; border: none; border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 700; cursor: pointer; flex: 1; }
+        .btn-guest-new:active { background: #059669; }
+        .btn-guest-once { background: #f59e0b; color: #1e293b; border: none; border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 700; cursor: pointer; flex: 1; }
+        .btn-guest-once:active { background: #d97706; }
+
+        /* Move guest button on ucet card */
+        .btn-move-guest { background-color: #8b5cf6; color: white; padding: 12px 8px; font-size: 14px; border-radius: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+        .btn-move-guest:hover { background-color: #7c3aed; }
+
+        /* Move picker overlay */
+        .move-picker-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+            z-index: 9100; align-items: center; justify-content: center;
+        }
+        .move-picker-overlay.active { display: flex; }
+        .move-picker-box {
+            background: #1e293b; border-radius: 16px; width: 92%; max-width: 420px;
+            max-height: 75vh; overflow-y: auto; padding: 20px;
+            border: 2px solid #8b5cf6;
+        }
+        .move-picker-title { color: #8b5cf6; font-size: 18px; font-weight: 800; margin-bottom: 16px; }
+        .move-table-tile {
+            background: #0f172a; border: 2px solid #334155; border-radius: 12px;
+            padding: 14px 16px; cursor: pointer; transition: all 0.15s; margin-bottom: 8px;
+            display: flex; justify-content: space-between; align-items: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .move-table-tile:active { background: #1e3a5f; border-color: #8b5cf6; }
+        .move-table-tile-name { color: #f8fafc; font-size: 16px; font-weight: 700; }
+        .move-table-tile-sub { color: #64748b; font-size: 13px; }
+        .btn-move-cancel { width: 100%; background: #334155; color: #94a3b8; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+
+        /* Add guest inline input */
+        .guest-add-inline { background: #0f172a; border: 2px solid #334155; border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+        .guest-add-inline-title { color: #f8fafc; font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+        .guest-add-inline-row { display: flex; gap: 8px; }
+        .guest-add-inline input { flex: 1; padding: 12px; border: 2px solid #38bdf8; border-radius: 10px; font-size: 15px; font-weight: 600; background: white; color: #000; outline: none; }
+        .btn-guest-inline-ok { background: #10b981; color: white; border: none; border-radius: 10px; padding: 12px 16px; font-size: 15px; font-weight: 700; cursor: pointer; }
+        .btn-guest-inline-cancel { background: #334155; color: #94a3b8; border: none; border-radius: 10px; padding: 12px 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -1037,17 +1079,36 @@ function renderPickerGrid() {
         grid.innerHTML = html;
     }
     else if (pickerMode === 'guest') {
-        if (guests.length === 0) { grid.innerHTML = '<div class="tile-empty">Žiadni hostia. Pridaj ich v nastaveniach.</div>'; return; }
-        let html = '<div class="tile-grid guests">';
-        guests.forEach(g => {
-            const sel = g === selGuest ? ' selected' : '';
-            html += `
-                <div class="tile${sel}" onclick="chooseGuest('${escTile(g)}')">
-                    <div class="tile-icon">👤</div>
-                    <div class="tile-name">${g}</div>
-                </div>`;
-        });
-        html += '</div>';
+        // Header s tlačidlami pre nový/jednorázový hosť
+        let html = `<div class="picker-guest-actions">
+            <button class="btn-guest-new" onclick="showAddGuestInline('new')">👤+ Nový hosť</button>
+            <button class="btn-guest-once" onclick="showAddGuestInline('once')">👋 Jednorázový hosť</button>
+        </div>`;
+
+        // Inline formulár (skrytý predvolene)
+        html += `<div id="guestAddInline" class="guest-add-inline" style="display:none;">
+            <div class="guest-add-inline-title" id="guestAddInlineTitle">Zadaj meno / prezývku:</div>
+            <div class="guest-add-inline-row">
+                <input type="text" id="guestAddInlineInput" placeholder="Meno alebo prezývka..." onkeydown="if(event.key==='Enter') confirmAddGuestInline()" />
+                <button class="btn-guest-inline-ok" onclick="confirmAddGuestInline()">✓</button>
+                <button class="btn-guest-inline-cancel" onclick="hideAddGuestInline()">✕</button>
+            </div>
+        </div>`;
+
+        if (guests.length === 0) {
+            html += '<div class="tile-empty">Žiadni uložení hostia. Pridaj ich tlačidlom vyššie.</div>';
+        } else {
+            html += '<div class="tile-grid guests">';
+            guests.forEach(g => {
+                const sel = g === selGuest ? ' selected' : '';
+                html += `
+                    <div class="tile${sel}" onclick="chooseGuest('${escTile(g)}')">
+                        <div class="tile-icon">👤</div>
+                        <div class="tile-name">${g}</div>
+                    </div>`;
+            });
+            html += '</div>';
+        }
         grid.innerHTML = html;
     }
     else if (pickerMode === 'drink') {
@@ -1537,8 +1598,126 @@ async function deleteDrinkFromSystem() {
 }
 
 // ============================================================
-// 🍺 OBJEDNÁVKY (na účet = stôl + hosť)
+// 👤 INLINE PRIDANIE HOSŤA (v pickeri)
 // ============================================================
+let addGuestInlineMode = null; // 'new' | 'once'
+
+function showAddGuestInline(mode) {
+    addGuestInlineMode = mode;
+    const box = document.getElementById('guestAddInline');
+    const title = document.getElementById('guestAddInlineTitle');
+    const input = document.getElementById('guestAddInlineInput');
+    if (!box || !title || !input) return;
+    title.textContent = mode === 'new' ? '👤 Nový hosť – uloží sa do zoznamu:' : '👋 Jednorázový hosť – zmizne po zaplatení:';
+    input.value = '';
+    box.style.display = 'block';
+    setTimeout(() => input.focus(), 100);
+}
+
+function hideAddGuestInline() {
+    const box = document.getElementById('guestAddInline');
+    if (box) box.style.display = 'none';
+    addGuestInlineMode = null;
+}
+
+async function confirmAddGuestInline() {
+    const input = document.getElementById('guestAddInlineInput');
+    if (!input) return;
+    const name = input.value.trim();
+    if (!name) { alert('Zadaj meno alebo prezývku!'); return; }
+
+    if (addGuestInlineMode === 'new') {
+        // Ulož do zoznamu hostí a vyber
+        if (!guests.includes(name)) {
+            await saveGuest(name);
+        }
+        chooseGuest(name);
+    } else if (addGuestInlineMode === 'once') {
+        // Jednorázový: nezapisuje sa do guests, ale použijeme priamo
+        // Označíme prefixom aby sme vedeli že je jednorázový (alebo len vyberieme)
+        selGuest = name;
+        renderSelectionBar();
+        closePicker();
+        setTimeout(() => continueFlow(), 180);
+    }
+    hideAddGuestInline();
+}
+
+// ============================================================
+// 🔀 PRESUN HOSŤA NA INÝ STÔL
+// ============================================================
+let movingGuest = null; // { table, guest }
+
+function openMoveGuestPicker(table, guest) {
+    movingGuest = { table, guest };
+    const overlay = document.getElementById('moveGuestOverlay');
+    const info = document.getElementById('moveGuestInfo');
+    const list = document.getElementById('moveTableList');
+    if (!overlay || !info || !list) return;
+
+    info.textContent = `Hosť: ${guest} | Aktuálny stôl: ${table}`;
+
+    // Zobraziť všetky stoly okrem aktuálneho
+    let html = '';
+    const otherTables = tables.filter(t => t !== table);
+    if (otherTables.length === 0) {
+        html = '<div style="color:#64748b; text-align:center; padding:16px;">Žiadne iné stoly nie sú k dispozícii.</div>';
+    } else {
+        otherTables.forEach(t => {
+            const accsAtTable = Object.values(accounts).filter(a => a.table === t && a.items.length > 0);
+            const sub = accsAtTable.length > 0 ? `${accsAtTable.length} hosť(ia)` : 'Prázdny';
+            html += `<div class="move-table-tile" onclick="confirmMoveGuest('${escTile(t)}')">
+                <span class="move-table-tile-name">🪑 ${t}</span>
+                <span class="move-table-tile-sub">${sub}</span>
+            </div>`;
+        });
+    }
+    list.innerHTML = html;
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeMoveGuestPicker() {
+    const overlay = document.getElementById('moveGuestOverlay');
+    if (overlay) overlay.classList.remove('active');
+    document.body.style.overflow = '';
+    movingGuest = null;
+}
+
+async function confirmMoveGuest(newTable) {
+    if (!movingGuest) return;
+    const { table: oldTable, guest } = movingGuest;
+    const oldKey = accKey(oldTable, guest);
+    const newKey = accKey(newTable, guest);
+
+    // Skontroluj či hosť s rovnakým menom nie je už na novom stole
+    if (accounts[newKey] && accounts[newKey].items.length > 0) {
+        const merge = confirm(`Hosť "${guest}" je už pri stole "${newTable}". Zlúčiť objednávky?`);
+        if (!merge) { closeMoveGuestPicker(); return; }
+        // Zlúč items
+        const merged = [...(accounts[newKey].items || []), ...(accounts[oldKey] ? accounts[oldKey].items : [])];
+        await saveAccount(newTable, guest, merged);
+    } else {
+        // Presuň: ulož na nový stôl
+        const items = accounts[oldKey] ? [...accounts[oldKey].items] : [];
+        await saveAccount(newTable, guest, items);
+    }
+
+    // Zmaž zo starého stola
+    await deleteAccountDoc(oldTable, guest);
+
+    closeMoveGuestPicker();
+
+    // Potvrdenie
+    const bar = document.getElementById('selectionBar');
+    if (bar) {
+        bar.textContent = `✓ ${guest} presunutý/á na ${newTable}`;
+        bar.classList.add('active');
+        setTimeout(() => renderSelectionBar(), 2500);
+    }
+}
+
+
 async function changeItemCount(table, guest, drinkName, action) {
     const key = accKey(table, guest);
     if (!accounts[key]) return;
@@ -1840,6 +2019,7 @@ function renderGuestCard(table, guest, items) {
             </div>
             <div class="pay-row">
                 <button class="btn-add-more" onclick="addToExistingAccount('${table}','${guest}')">➕ Pridať</button>
+                <button class="btn-move-guest" onclick="openMoveGuestPicker('${table}','${guest}')">🔀 Stôl</button>
                 <button class="btn-pay-cash" onclick="closeAndPayAccount('${table}','${guest}','cash')">💵 Hotovosť</button>
                 <button class="btn-pay-card" onclick="closeAndPayAccount('${table}','${guest}','card')">💳 Karta</button>
             </div>
@@ -1923,6 +2103,16 @@ function installApp() {
     }
 }
 </script>
+
+<!-- ===== PRESUN HOSŤA - Overlay ===== -->
+<div id="moveGuestOverlay" class="move-picker-overlay">
+    <div class="move-picker-box">
+        <div class="move-picker-title">🔀 Presunúť hosťa</div>
+        <div id="moveGuestInfo" style="color:#94a3b8; font-size:14px; margin-bottom:14px;"></div>
+        <div id="moveTableList"></div>
+        <button class="btn-move-cancel" onclick="closeMoveGuestPicker()">Zrušiť</button>
+    </div>
+</div>
 
 <!-- PWA Install Banner -->
 <div id="installBanner" style="display:none; position:fixed; bottom:0; left:0; right:0; background:#1e293b; border-top:2px solid #38bdf8; padding:14px 20px; align-items:center; justify-content:space-between; z-index:9999; gap:12px;">
