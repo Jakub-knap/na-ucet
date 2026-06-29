@@ -233,6 +233,8 @@
         /* Sync indicator */
         .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block; margin-right: 4px; }
         .sync-dot.syncing { background: #f59e0b; animation: pulse 1s infinite; }
+        .sync-dot.offline { background: #ef4444; }
+        .sync-status.offline { color: #ef4444; font-weight: 700; }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
         .sync-status { font-size: 11px; color: #64748b; display: flex; align-items: center; }
 
@@ -315,7 +317,7 @@
             <span class="user-name" id="userName">Prevádzka</span>
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
-            <span class="sync-status"><span class="sync-dot" id="syncDot"></span><span id="syncText">Online</span></span>
+            <span class="sync-status" id="syncStatus"><span class="sync-dot" id="syncDot"></span><span id="syncText">Online</span></span>
             <button class="btn-logout" onclick="signOut()">Odhlásiť</button>
         </div>
     </div>
@@ -540,6 +542,19 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+
+// ✅ OFFLINE REŽIM — Firestore lokálna cache (IndexedDB)
+// Musí byť zapnuté PRED akýmkoľvek čítaním/zápisom.
+// synchronizeTabs: dáta fungujú aj keď je appka otvorená vo viacerých tabech/oknách.
+db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+    if (err.code === 'failed-precondition') {
+        // Viac tabov bez podpory multi-tab — cache beží len v jednom z nich
+        console.warn('Offline cache: otvorených viac tabov, beží len v jednom.');
+    } else if (err.code === 'unimplemented') {
+        // Prehliadač nepodporuje IndexedDB (napr. privátny režim v niektorých prehliadačoch)
+        console.warn('Offline cache: tento prehliadač ju nepodporuje.');
+    }
+});
 
 // Nastav LOCAL persistence — zostane prihlásený aj po zatvorení PWA
 // a hlavne: zachová stav počas redirect prihlásenia
@@ -770,6 +785,13 @@ async function loadAllData() {
 function setSyncing(isSyncing) {
     const dot = document.getElementById('syncDot');
     const text = document.getElementById('syncText');
+    if (!dot || !text) return;
+
+    // Keď sme offline, indikátor vždy ukazuje offline (zápisy idú do fronty)
+    if (!navigator.onLine) {
+        updateNetworkStatus();
+        return;
+    }
     if (isSyncing) {
         dot.classList.add('syncing');
         text.textContent = 'Ukladám...';
@@ -778,6 +800,30 @@ function setSyncing(isSyncing) {
         text.textContent = 'Online';
     }
 }
+
+// ✅ Sledovanie online/offline stavu zariadenia
+function updateNetworkStatus() {
+    const dot = document.getElementById('syncDot');
+    const text = document.getElementById('syncText');
+    const wrap = document.getElementById('syncStatus');
+    if (!dot || !text || !wrap) return;
+
+    if (navigator.onLine) {
+        dot.classList.remove('offline');
+        wrap.classList.remove('offline');
+        dot.classList.remove('syncing');
+        text.textContent = 'Online';
+    } else {
+        dot.classList.add('offline');
+        dot.classList.remove('syncing');
+        wrap.classList.add('offline');
+        text.textContent = 'Offline — uložené v zariadení';
+    }
+}
+
+window.addEventListener('online', updateNetworkStatus);
+window.addEventListener('offline', updateNetworkStatus);
+document.addEventListener('DOMContentLoaded', updateNetworkStatus);
 
 async function saveStats() {
     if (!userRef) return;
