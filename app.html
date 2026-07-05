@@ -395,10 +395,11 @@
                     <option value="PivoCap">🍺 Pivo čapované</option>
                     <option value="PivoFla">🍾 Pivo fľaškové</option>
                     <option value="Vino">🍷 Víno</option>
-                    <option value="Destilat">🥃 Destilát</option>
+                    <option value="Destilat">🥃 Alkohol</option>
+                    <option value="Alkohol02">🍸 Alkohol 0.2</option>
                     <option value="Nealko">🥤 Nealko fľaškové</option>
                     <option value="Cigarety">🚬 Cigarety</option>
-                    <option value="Ostatne">🍿 Ostatné</option>
+                    <option value="Ostatne">🍿 Pochutiny</option>
                 </select>
                 <input type="text" id="newDrinkName" placeholder="Názov (napr. Plzeň 12...)">
                 <div class="row" style="margin-bottom: 0;">
@@ -672,10 +673,11 @@ const CATEGORIES = [
     { id: 'PivoCap',   icon: '🍺', name: 'Pivo čapované' },
     { id: 'PivoFla',   icon: '🍾', name: 'Pivo fľaškové' },
     { id: 'Vino',      icon: '🍷', name: 'Víno' },
-    { id: 'Destilat',  icon: '🥃', name: 'Destilát' },
+    { id: 'Destilat',  icon: '🥃', name: 'Alkohol' },
+    { id: 'Alkohol02', icon: '🍸', name: 'Alkohol 0.2' },
     { id: 'Nealko',    icon: '🥤', name: 'Nealko fľaškové' },
     { id: 'Cigarety',  icon: '🚬', name: 'Cigarety' },
-    { id: 'Ostatne',   icon: '🍿', name: 'Ostatné' }
+    { id: 'Ostatne',   icon: '🍿', name: 'Pochutiny' }
 ];
 function catIcon(catId) {
     const c = CATEGORIES.find(x => x.id === catId);
@@ -683,7 +685,7 @@ function catIcon(catId) {
 }
 function catName(catId) {
     const c = CATEGORIES.find(x => x.id === catId);
-    return c ? c.name : 'Ostatné';
+    return c ? c.name : 'Pochutiny';
 }
 
 // Unsubscribe funkcie pre real-time listenery
@@ -725,6 +727,8 @@ async function loadAllData() {
                 menu = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 updateDropdowns();
                 renderStats();
+                // Ak je otvorené okno nápojov, hneď ho obnov (nový/zmenený nápoj sa prejaví)
+                if (pickerMode === 'drink') renderPickerGrid();
             });
         unsubscribeListeners.push(unsubMenu);
 
