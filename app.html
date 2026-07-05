@@ -199,6 +199,13 @@
         .cat-tile .tile-icon { font-size: 20px; margin-bottom: 2px; }
         .cat-tile .tile-name { font-size: 12px; }
         .btn-clear { background-color: #334155; color: #94a3b8; padding: 8px 14px; font-size: 13px; border-radius: 8px; font-weight: 600; }
+        /* Úprava tržby */
+        .adjust-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .btn-adjust { padding: 13px 10px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; color: #fff; }
+        .btn-adjust.adj-plus { background: #10b981; }
+        .btn-adjust.adj-minus { background: #475569; }
+        .btn-adjust:active { transform: scale(0.97); }
+        .adjust-amount { width: 100%; margin-bottom: 10px; padding: 12px; border: 2px solid #334155; border-radius: 10px; background: #fff; color: #000; font-size: 15px; font-weight: 600; outline: none; }
         .btn-pay-cash { background-color: #10b981; color: white; padding: 8px 12px; font-size: 13px; border-radius: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
         .btn-pay-cash:hover { background-color: #059669; }
         .btn-pay-card { background-color: #3b82f6; color: white; padding: 8px 12px; font-size: 13px; border-radius: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -429,13 +436,7 @@
             <span class="admin-icon" id="adminIcon">▼</span>
         </div>
         <div class="admin-content">
-            <h3>Pridať stôl</h3>
-            <div class="row">
-                <input type="text" id="newTableName" placeholder="Názov stola (napr. Stôl č.1, Štamgasti...)">
-                <button class="btn-add" onclick="addTable()">+</button>
-            </div>
-
-            <h3 style="margin-top: 15px;">Pridať hosťa</h3>
+            <h3>Pridať hosťa</h3>
             <div class="row">
                 <input type="text" id="newGuestName" placeholder="Meno hosťa (napr. Jozef, Ján...)">
                 <button class="btn-add" onclick="addGuest()">+</button>
@@ -460,15 +461,7 @@
                 </div>
             </div>
 
-            <h3 style="margin-top: 25px; color: #38bdf8; border-top: 1px dashed #334155; padding-top: 15px;">Vymazať stôl</h3>
-            <div class="row row-vertical">
-                <select id="deleteTableSelect">
-                    <option value="">-- Vyber stôl na zmazanie --</option>
-                </select>
-                <button class="btn-delete-admin" onclick="deleteTableFromSystem()">Vymazať stôl</button>
-            </div>
-
-            <h3 style="margin-top: 15px; color: #38bdf8;">Vymazať hosťa</h3>
+            <h3 style="margin-top: 25px; color: #38bdf8; border-top: 1px dashed #334155; padding-top: 15px;">Vymazať hosťa</h3>
             <div class="row row-vertical">
                 <select id="deleteGuestSelect">
                     <option value="">-- Vyber hosťa na zmazanie --</option>
@@ -503,9 +496,9 @@
     <h2>Nahadzovanie objednávok</h2>
     <div class="row row-vertical" style="background: #1e293b; padding: 12px; border-radius: 10px;">
         <!-- Ukazovateľ aktuálneho výberu -->
-        <div id="selectionBar" class="selection-bar">Vyber stôl a hosťa →</div>
+        <div id="selectionBar" class="selection-bar">Vyber hosťa →</div>
 
-        <!-- 3 veľké ikony -->
+        <!-- 2 veľké ikony -->
         <div class="big-actions">
             <div class="big-action" onclick="openPicker('drink')">
                 <div class="big-icon">🍺</div>
@@ -516,11 +509,6 @@
                 <div class="big-icon">👤</div>
                 <div class="big-label">Hostia</div>
                 <div class="big-sub" id="subGuest">—</div>
-            </div>
-            <div class="big-action" onclick="openPicker('table')">
-                <div class="big-icon">🪑</div>
-                <div class="big-label">Stoly</div>
-                <div class="big-sub" id="subTable">—</div>
             </div>
         </div>
 
@@ -546,8 +534,8 @@
             <div id="pickerPay" class="picker-confirm" style="display:none;">
                 <div id="quickSaleTotal" style="text-align:center; color:#f8fafc; font-weight:800; font-size:18px; margin-bottom:10px;">0.00€</div>
                 <div style="display:flex; gap:10px;">
-                    <button class="btn-confirm" style="background:#10b981;" onclick="quickSalePay('cash')">💵 Hotovosť</button>
                     <button class="btn-confirm" style="background:#3b82f6;" onclick="quickSalePay('card')">💳 Karta</button>
+                    <button class="btn-confirm" style="background:#10b981;" onclick="quickSalePay('cash')">💵 Hotovosť</button>
                 </div>
             </div>
         </div>
@@ -583,6 +571,19 @@
 
         <button class="btn-clear" style="margin-top:15px; width:100%; background:#0ea5e9; color:white; border:none; font-weight:bold;" onclick="dailyClose()">📄 Uzávierka dňa (stiahnuť PDF)</button>
         <button class="btn-clear" style="margin-top:8px; width:100%; background:#991b1b; color:white; border:none;" onclick="resetRevenue()">Vynulovať tržbu a predaje</button>
+
+        <!-- ✏️ Úprava tržby (ručná oprava) -->
+        <div style="margin-top:20px; border-top:1px dashed #334155; padding-top:16px;">
+            <h3 style="color:#38bdf8; font-size:14px; margin-bottom:4px;">✏️ Úprava tržby</h3>
+            <p style="color:#64748b; font-size:12px; margin-bottom:10px; line-height:1.4;">Ručne priráta alebo odráta zadanú sumu ku karte/hotovosti. Prejaví sa v „Spolu tržba" hore.</p>
+            <input type="number" id="adjustAmount" class="adjust-amount" step="0.10" min="0" placeholder="Suma v € (napr. 5.00)">
+            <div class="adjust-grid">
+                <button class="btn-adjust adj-plus" onclick="adjustRevenue('card', 1)">💳 Karta +</button>
+                <button class="btn-adjust adj-minus" onclick="adjustRevenue('card', -1)">💳 Karta −</button>
+                <button class="btn-adjust adj-plus" onclick="adjustRevenue('cash', 1)">💵 Hotovosť +</button>
+                <button class="btn-adjust adj-minus" onclick="adjustRevenue('cash', -1)">💵 Hotovosť −</button>
+            </div>
+        </div>
     </div>
 </div>
 </div>
@@ -712,6 +713,9 @@ let totalCard = 0;
 let lastPaidAccount = null;
 
 // Pomocné: kľúč účtu zo stola a hosťa
+// Stoly sú zrušené z UI. Účty používajú jeden skrytý predvolený "stôl",
+// aby kľúč účtu (stôl::hosť) a existujúca štruktúra vo Firestore fungovali ďalej.
+const DEFAULT_TABLE = 'Účet';
 function accKey(table, guest) { return table + '::' + guest; }
 
 // Stav výberu v dlaždicovom rozhraní
@@ -995,12 +999,6 @@ function toggleAdminPanel() {
 
 function updateDropdowns() {
     // --- Mazacie dropdowny (zostávajú v nastaveniach) ---
-    const delTableSel = document.getElementById('deleteTableSelect');
-    delTableSel.innerHTML = '<option value="">-- Vyber stôl na zmazanie --</option>';
-    tables.forEach(t => {
-        delTableSel.innerHTML += `<option value="${t}">${t}</option>`;
-    });
-
     const delGuestSel = document.getElementById('deleteGuestSelect');
     delGuestSel.innerHTML = '<option value="">-- Vyber hosťa na zmazanie --</option>';
     guests.forEach(g => {
@@ -1037,17 +1035,11 @@ function renderSelectionBar() {
     if (subT) subT.textContent = selTable || '—';
     if (subG) subG.textContent = selGuest || '—';
     if (!bar) return;
-    if (selTable && selGuest) {
-        bar.textContent = `✓ ${selTable} · ${selGuest}`;
+    if (selGuest) {
+        bar.textContent = `✓ ${selGuest}`;
         bar.classList.add('active');
-    } else if (selTable) {
-        bar.textContent = `${selTable} · (vyber hosťa)`;
-        bar.classList.remove('active');
-    } else if (selGuest) {
-        bar.textContent = `${selGuest} · (vyber stôl)`;
-        bar.classList.remove('active');
     } else {
-        bar.textContent = 'Vyber stôl a hosťa →';
+        bar.textContent = 'Vyber hosťa →';
         bar.classList.remove('active');
     }
 }
@@ -1325,8 +1317,8 @@ function continueFlow() {
     if (!hasDrinks) { openPicker('drink'); return; }
     // 2. Nemáme hosťa → vypýtaj hosťa
     if (!selGuest) { openPicker('guest'); return; }
-    // 3. Nemáme stôl → vypýtaj stôl
-    if (!selTable) { openPicker('table'); return; }
+    // 3. Stoly sú zrušené → priraď skrytý predvolený stôl automaticky
+    if (!selTable) selTable = DEFAULT_TABLE;
 
     // 4. Máme všetko → ulož a vynuluj
     saveOrderAndReset();
@@ -1356,7 +1348,7 @@ async function saveOrderAndReset() {
     // Krátke potvrdenie
     const bar = document.getElementById('selectionBar');
     if (bar) {
-        bar.textContent = `✓ Pridané: ${savedGuest} · ${savedTable}`;
+        bar.textContent = `✓ Pridané: ${savedGuest}`;
         bar.classList.add('active');
         setTimeout(() => renderSelectionBar(), 2500);
     }
@@ -2067,6 +2059,26 @@ async function resetRevenue() {
 // ============================================================
 // 🖥️ RENDER FUNKCIE
 // ============================================================
+// ✏️ Ručná úprava tržby — priráta/odráta sumu ku karte alebo hotovosti
+// a zosynchronizuje "Spolu tržba" hore. Ukladá sa do Firestore.
+function adjustRevenue(method, sign) {
+    const input = document.getElementById('adjustAmount');
+    const amount = parseFloat(input.value);
+    if (isNaN(amount) || amount <= 0) { alert('Zadaj sumu väčšiu ako 0.'); return; }
+    const delta = amount * sign;
+    if (method === 'card') {
+        if (totalCard + delta < 0) { alert('Karta by šla do mínusu — úprava zrušená.'); return; }
+        totalCard += delta;
+    } else {
+        if (totalCash + delta < 0) { alert('Hotovosť by šla do mínusu — úprava zrušená.'); return; }
+        totalCash += delta;
+    }
+    totalRevenue = totalCash + totalCard; // zosynchronizuj celkovú tržbu
+    input.value = '';
+    renderStats();
+    saveStats();
+}
+
 function renderStats() {
     document.getElementById('totalRevenueStat').innerText = `${totalRevenue.toFixed(2)}€`;
     document.getElementById('totalCashStat').innerText = `${totalCash.toFixed(2)}€`;
@@ -2094,7 +2106,7 @@ function renderStornoBox() {
     if (lastPaidAccount && lastPaidAccount.guest) {
         box.style.display = 'block';
         const methodText = lastPaidAccount.method === 'card' ? 'Kartou' : 'Hotovosťou';
-        info.innerText = `${lastPaidAccount.guest} pri ${lastPaidAccount.table} | Suma: ${lastPaidAccount.total.toFixed(2)}€ (${methodText})`;
+        info.innerText = `${lastPaidAccount.guest} | Suma: ${lastPaidAccount.total.toFixed(2)}€ (${methodText})`;
     } else {
         box.style.display = 'none';
     }
@@ -2133,59 +2145,34 @@ function renderGuestCard(table, guest, items) {
             </div>
             <div class="pay-row">
                 <button class="btn-add-more" onclick="addToExistingAccount('${table}','${guest}')">➕ Pridať</button>
-                <button class="btn-move-guest" onclick="openMoveGuestPicker('${table}','${guest}')">🔀 Stôl</button>
-                <button class="btn-pay-cash" onclick="closeAndPayAccount('${table}','${guest}','cash')">💵 Hotovosť</button>
                 <button class="btn-pay-card" onclick="closeAndPayAccount('${table}','${guest}','card')">💳 Karta</button>
+                <button class="btn-pay-cash" onclick="closeAndPayAccount('${table}','${guest}','cash')">💵 Hotovosť</button>
             </div>
             ${listHtml}
         </div>`;
 }
 
 function renderAccounts() {
-    // Obnov počítadlá na dlaždiciach nápojov (real-time sync)
     // Ak je otvorené okno nápojov, obnov počítadlá (real-time sync)
     if (pickerMode === 'drink') renderPickerGrid();
     const container = document.getElementById('accountsContainer');
     container.innerHTML = '';
-    let hasActiveOrders = false;
 
-    // Zoskup otvorené účty podľa stola
-    const byTable = {};   // stôl -> [{guest, items}]
-    for (const acc of Object.values(accounts)) {
-        if (!acc.items || acc.items.length === 0) continue;
-        hasActiveOrders = true;
-        if (!byTable[acc.table]) byTable[acc.table] = [];
-        byTable[acc.table].push(acc);
-    }
+    // Otvorené účty (bez stolov) — zoradené podľa mena hosťa
+    const openAccounts = Object.values(accounts)
+        .filter(a => a.items && a.items.length > 0)
+        .sort((a, b) => a.guest.localeCompare(b.guest, 'sk'));
 
-    // Vykresli stoly v poradí ako sú v zozname tables
-    const tableOrder = tables.slice();
-    // Pridaj aj stoly ktoré už nie sú v číselníku ale majú účty
-    Object.keys(byTable).forEach(t => { if (!tableOrder.includes(t)) tableOrder.push(t); });
-
-    for (const table of tableOrder) {
-        const accs = byTable[table];
-        if (!accs || accs.length === 0) continue;
-
-        let tableTotal = 0;
-        accs.forEach(a => a.items.forEach(i => tableTotal += i.price));
-
-        let cardsHtml = '';
-        accs.forEach(a => { cardsHtml += renderGuestCard(a.table, a.guest, a.items); });
-
-        container.innerHTML += `
-            <div class="table-group">
-                <div class="table-group-header">
-                    <span>🪑 ${table}</span>
-                    <span class="table-group-total">${tableTotal.toFixed(2)}€</span>
-                </div>
-                ${cardsHtml}
-            </div>`;
-    }
-
-    if (!hasActiveOrders) {
+    if (openAccounts.length === 0) {
         container.innerHTML = '<p style="color:#64748b;text-align:center;padding:10px 0;">Zatiaľ žiadne otvorené účty.</p>';
+        return;
     }
+
+    let html = '';
+    for (const acc of openAccounts) {
+        html += renderGuestCard(acc.table, acc.guest, acc.items);
+    }
+    container.innerHTML = html;
 }
 </script>
 
