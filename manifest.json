@@ -2,7 +2,7 @@
   "name": "Na účet - Barový Systém",
   "short_name": "Na účet",
   "description": "Barový systém pre správu účtov a tržieb",
-  "start_url": "/",
+  "start_url": "/app",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
