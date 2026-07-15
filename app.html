@@ -206,6 +206,33 @@
         .btn-adjust.adj-minus { background: #475569; }
         .btn-adjust:active { transform: scale(0.97); }
         .adjust-amount { width: 100%; margin-bottom: 10px; padding: 12px; border: 2px solid #334155; border-radius: 10px; background: #fff; color: #000; font-size: 15px; font-weight: 600; outline: none; }
+
+        /* Prepínače modulov */
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; margin-bottom: 8px; color: #f8fafc; font-size: 15px; font-weight: 600; }
+        .switch { position: relative; display: inline-block; width: 52px; height: 30px; flex: 0 0 auto; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background: #475569; border-radius: 30px; transition: 0.25s; }
+        .slider:before { content: ""; position: absolute; height: 22px; width: 22px; left: 4px; bottom: 4px; background: #fff; border-radius: 50%; transition: 0.25s; }
+        .switch input:checked + .slider { background: #10b981; }
+        .switch input:checked + .slider:before { transform: translateX(22px); }
+
+        /* Sklad */
+        .sklad-cat-title { color: #38bdf8; font-size: 14px; font-weight: 800; margin: 14px 0 6px; }
+        .sklad-item { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+        .sklad-item.low { border-color: #f59e0b; background: #1c1708; }
+        .sklad-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+        .sklad-name { font-weight: 700; color: #f8fafc; font-size: 15px; }
+        .sklad-qty { font-weight: 800; font-size: 18px; color: #10b981; white-space: nowrap; }
+        .sklad-item.low .sklad-qty { color: #f59e0b; }
+        .sklad-warn { color: #f59e0b; font-size: 12px; font-weight: 700; margin-left: 6px; }
+        .sklad-controls { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .sklad-input { width: 64px; padding: 9px; border: 2px solid #334155; border-radius: 8px; background: #fff; color: #000; font-size: 15px; font-weight: 600; outline: none; text-align: center; }
+        .sklad-btn { width: 40px; height: 40px; border: none; border-radius: 8px; font-size: 20px; font-weight: 800; color: #fff; cursor: pointer; }
+        .sklad-btn.plus { background: #10b981; }
+        .sklad-btn.minus { background: #475569; }
+        .sklad-btn:active { transform: scale(0.94); }
+        .sklad-thresh-wrap { display: flex; align-items: center; gap: 5px; margin-left: auto; color: #94a3b8; font-size: 12px; }
+        .sklad-thresh { width: 56px; padding: 8px; border: 2px solid #334155; border-radius: 8px; background: #fff; color: #000; font-size: 14px; font-weight: 600; outline: none; text-align: center; }
         .btn-pay-cash { background-color: #10b981; color: white; padding: 8px 12px; font-size: 13px; border-radius: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
         .btn-pay-cash:hover { background-color: #059669; }
         .btn-pay-card { background-color: #3b82f6; color: white; padding: 8px 12px; font-size: 13px; border-radius: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -436,6 +463,36 @@
             <span class="admin-icon" id="adminIcon">▼</span>
         </div>
         <div class="admin-content">
+            <h3 style="margin-top:0;">🧩 Moduly (zapnúť / vypnúť)</h3>
+            <div class="toggle-row">
+                <span>🪑 Stoly</span>
+                <label class="switch"><input type="checkbox" id="togTables" onchange="toggleFeature('tables', this)"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+                <span>🕐 Dochádzka</span>
+                <label class="switch"><input type="checkbox" id="togAttendance" onchange="toggleFeature('attendance', this)"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+                <span>📦 Sklad</span>
+                <label class="switch"><input type="checkbox" id="togSklad" onchange="toggleFeature('sklad', this)"><span class="slider"></span></label>
+            </div>
+            <p style="color:#64748b; font-size:12px; margin:6px 0 16px; line-height:1.4;">Vypnuté moduly sa v aplikácii nezobrazujú. Sklad odpočítava zásoby z predaja len keď je zapnutý.</p>
+
+            <div id="tableSettings" style="display:none; border-top:1px dashed #334155; padding-top:15px;">
+                <h3 style="margin-top:0;">Pridať stôl</h3>
+                <div class="row">
+                    <input type="text" id="newTableName" placeholder="Názov stola (napr. Stôl č.1, Štamgasti...)">
+                    <button class="btn-add" onclick="addTable()">+</button>
+                </div>
+                <h3 style="margin-top: 15px; color: #38bdf8;">Vymazať stôl</h3>
+                <div class="row row-vertical">
+                    <select id="deleteTableSelect">
+                        <option value="">-- Vyber stôl na zmazanie --</option>
+                    </select>
+                    <button class="btn-delete-admin" onclick="deleteTableFromSystem()">Vymazať stôl</button>
+                </div>
+            </div>
+
             <h3>Pridať hosťa</h3>
             <div class="row">
                 <input type="text" id="newGuestName" placeholder="Meno hosťa (napr. Jozef, Ján...)">
@@ -493,12 +550,24 @@
         </div>
     </div>
 
+    <!-- 📦 Sklad -->
+    <div class="admin-accordion" id="skladAccordion" style="display:none;">
+        <div class="admin-header" onclick="toggleSkladPanel()">
+            <span>📦 Sklad</span>
+            <span class="admin-icon" id="skladIcon">▼</span>
+        </div>
+        <div class="admin-content" id="skladContent">
+            <p style="color:#64748b; font-size:12px; margin:0 0 12px; line-height:1.4;">Všetky nápoje z ponuky sú tu automaticky. Nastav množstvo (+/−) a hranicu, pri ktorej ťa appka upozorní. Pri predaji sa zásoba automaticky odpočíta.</p>
+            <div id="skladContainer"></div>
+        </div>
+    </div>
+
     <h2>Nahadzovanie objednávok</h2>
     <div class="row row-vertical" style="background: #1e293b; padding: 12px; border-radius: 10px;">
         <!-- Ukazovateľ aktuálneho výberu -->
         <div id="selectionBar" class="selection-bar">Vyber hosťa →</div>
 
-        <!-- 2 veľké ikony -->
+        <!-- veľké ikony -->
         <div class="big-actions">
             <div class="big-action" onclick="openPicker('drink')">
                 <div class="big-icon">🍺</div>
@@ -509,6 +578,11 @@
                 <div class="big-icon">👤</div>
                 <div class="big-label">Hostia</div>
                 <div class="big-sub" id="subGuest">—</div>
+            </div>
+            <div class="big-action" id="bigActionTable" style="display:none;" onclick="openPicker('table')">
+                <div class="big-icon">🪑</div>
+                <div class="big-label">Stoly</div>
+                <div class="big-sub" id="subTable">—</div>
             </div>
         </div>
 
@@ -541,7 +615,7 @@
         </div>
     </div>
 
-    <h2>📋 Otvorené účty (Aktuálne stoly)</h2>
+    <h2>📋 Otvorené účty</h2>
     <div id="accountsContainer" class="ucet-box">
         <p style="color: #64748b; text-align: center; padding: 10px 0;">Načítavam...</p>
     </div>
@@ -712,9 +786,12 @@ let totalCash = 0;
 let totalCard = 0;
 let lastPaidAccount = null;
 
+// 🧩 Voliteľné moduly (zapnúť/vypnúť v nastaveniach) — synced z Firestore
+let features = { tables: false, attendance: true, sklad: false };
+
 // Pomocné: kľúč účtu zo stola a hosťa
-// Stoly sú zrušené z UI. Účty používajú jeden skrytý predvolený "stôl",
-// aby kľúč účtu (stôl::hosť) a existujúca štruktúra vo Firestore fungovali ďalej.
+// Stoly sú voliteľné. Keď sú vypnuté, účty používajú jeden skrytý predvolený
+// "stôl", aby kľúč účtu (stôl::hosť) a štruktúra vo Firestore fungovali ďalej.
 const DEFAULT_TABLE = 'Účet';
 function accKey(table, guest) { return table + '::' + guest; }
 
@@ -756,6 +833,19 @@ async function loadAllData() {
     unsubscribeListeners = [];
 
     try {
+        // 0. Moduly (zapnuté/vypnuté funkcie) — real-time
+        const unsubFeatures = userRef.collection('settings').doc('features')
+            .onSnapshot(doc => {
+                if (doc.exists) {
+                    const d = doc.data();
+                    features.tables = !!d.tables;
+                    features.attendance = (d.attendance === undefined) ? true : !!d.attendance;
+                    features.sklad = !!d.sklad;
+                }
+                applyFeatures();
+            });
+        unsubscribeListeners.push(unsubFeatures);
+
         // 1. Štatistiky (real-time)
         const unsubStats = userRef.collection('stats').doc('main')
             .onSnapshot(doc => {
@@ -785,6 +875,7 @@ async function loadAllData() {
                 renderStats();
                 // Ak je otvorené okno nápojov, hneď ho obnov (nový/zmenený nápoj sa prejaví)
                 if (pickerMode === 'drink') renderPickerGrid();
+                if (features.sklad) renderSklad();
             });
         unsubscribeListeners.push(unsubMenu);
 
@@ -916,6 +1007,40 @@ async function saveLastPaid() {
     );
 }
 
+// 🧩 Moduly — uloženie a aplikovanie
+async function saveFeatures() {
+    if (!userRef) return;
+    await userRef.collection('settings').doc('features').set(features);
+}
+function toggleFeature(name, el) {
+    features[name] = el.checked;
+    saveFeatures();
+    applyFeatures();
+}
+function applyFeatures() {
+    // Zosynchronizuj prepínače
+    const map = { tables: 'togTables', attendance: 'togAttendance', sklad: 'togSklad' };
+    Object.entries(map).forEach(([key, id]) => {
+        const el = document.getElementById(id);
+        if (el) el.checked = features[key];
+    });
+    // Dochádzka
+    const att = document.getElementById('attendanceAccordion');
+    if (att) att.style.display = features.attendance ? '' : 'none';
+    // Stoly — veľká ikona + nastavenia stolov
+    const tblAction = document.getElementById('bigActionTable');
+    if (tblAction) tblAction.style.display = features.tables ? '' : 'none';
+    const tblSettings = document.getElementById('tableSettings');
+    if (tblSettings) tblSettings.style.display = features.tables ? '' : 'none';
+    // Sklad
+    const sklad = document.getElementById('skladAccordion');
+    if (sklad) sklad.style.display = features.sklad ? '' : 'none';
+
+    updateDropdowns();
+    renderAccounts();
+    if (features.sklad) renderSklad();
+}
+
 // --- Číselník: stoly ---
 async function saveTable(name) {
     if (!userRef) return;
@@ -977,7 +1102,9 @@ async function saveDrink(drink) {
             name: drink.name,
             price: drink.price,
             category: drink.category,
-            sold: drink.sold || 0
+            sold: drink.sold || 0,
+            stock: drink.stock || 0,
+            lowStock: drink.lowStock || 0
         });
         return id;
     } finally {
@@ -999,6 +1126,12 @@ function toggleAdminPanel() {
 
 function updateDropdowns() {
     // --- Mazacie dropdowny (zostávajú v nastaveniach) ---
+    const delTableSel = document.getElementById('deleteTableSelect');
+    if (delTableSel) {
+        delTableSel.innerHTML = '<option value="">-- Vyber stôl na zmazanie --</option>';
+        tables.forEach(t => { delTableSel.innerHTML += `<option value="${t}">${t}</option>`; });
+    }
+
     const delGuestSel = document.getElementById('deleteGuestSelect');
     delGuestSel.innerHTML = '<option value="">-- Vyber hosťa na zmazanie --</option>';
     guests.forEach(g => {
@@ -1120,6 +1253,7 @@ async function quickSalePay(method) {
         if (!drink) continue;
         suma += drink.price * count;
         drink.sold = (drink.sold || 0) + count;
+        if (features.sklad) drink.stock = (drink.stock || 0) - count;
         await saveDrink(drink);
     }
 
@@ -1317,8 +1451,11 @@ function continueFlow() {
     if (!hasDrinks) { openPicker('drink'); return; }
     // 2. Nemáme hosťa → vypýtaj hosťa
     if (!selGuest) { openPicker('guest'); return; }
-    // 3. Stoly sú zrušené → priraď skrytý predvolený stôl automaticky
-    if (!selTable) selTable = DEFAULT_TABLE;
+    // 3. Stôl: pýtaj len ak je modul stolov zapnutý, inak skrytý predvolený
+    if (!selTable) {
+        if (features.tables) { openPicker('table'); return; }
+        selTable = DEFAULT_TABLE;
+    }
 
     // 4. Máme všetko → ulož a vynuluj
     saveOrderAndReset();
@@ -1853,11 +1990,12 @@ async function closeAndPayAccount(table, guest, method) {
 
     lastPaidAccount = { table, guest, total: accountTotal, method, items: [...items] };
 
-    // Aktualizuj sold na nápojoch
+    // Aktualizuj sold na nápojoch (+ odpočítaj zo skladu ak je zapnutý)
     for (const item of items) {
         const drink = menu.find(d => d.name === item.name);
         if (drink) {
             drink.sold = (drink.sold || 0) + 1;
+            if (features.sklad) drink.stock = (drink.stock || 0) - 1;
             await saveDrink(drink);
         }
     }
@@ -1890,6 +2028,7 @@ async function undoLastPayment() {
         const drink = menu.find(d => d.name === item.name);
         if (drink && drink.sold > 0) {
             drink.sold--;
+            if (features.sklad) drink.stock = (drink.stock || 0) + 1;
             await saveDrink(drink);
         }
     }
@@ -2100,6 +2239,69 @@ function renderStats() {
     }
 }
 
+// ── 📦 SKLAD ──
+function toggleSkladPanel() {
+    document.getElementById('skladAccordion').classList.toggle('open');
+}
+
+function renderSklad() {
+    const container = document.getElementById('skladContainer');
+    if (!container) return;
+    if (menu.length === 0) {
+        container.innerHTML = '<p style="color:#64748b;text-align:center;padding:10px 0;">Zatiaľ žiadne nápoje. Pridaj ich v nastaveniach.</p>';
+        return;
+    }
+    let html = '';
+    for (const cat of CATEGORIES) {
+        const drinks = menu.filter(d => (d.category || 'Ostatne') === cat.id);
+        if (drinks.length === 0) continue;
+        html += `<div class="sklad-cat-title">${cat.icon} ${cat.name}</div>`;
+        drinks.forEach(d => {
+            const stock = d.stock || 0;
+            const low = d.lowStock || 0;
+            const isLow = low > 0 && stock <= low;
+            const idEsc = escTile(d.id);
+            html += `
+                <div class="sklad-item${isLow ? ' low' : ''}">
+                    <div class="sklad-top">
+                        <span class="sklad-name">${d.name}</span>
+                        <span class="sklad-qty">${stock} ks${isLow ? '<span class="sklad-warn">⚠ nízka</span>' : ''}</span>
+                    </div>
+                    <div class="sklad-controls">
+                        <input type="number" class="sklad-input" id="skq_${d.id}" placeholder="ks" min="1">
+                        <button class="sklad-btn plus" onclick="changeStock('${idEsc}', 1)">+</button>
+                        <button class="sklad-btn minus" onclick="changeStock('${idEsc}', -1)">−</button>
+                        <span class="sklad-thresh-wrap">pod <input type="number" class="sklad-thresh" min="0" value="${low}" onchange="setStockThreshold('${idEsc}', this.value)"> ks</span>
+                    </div>
+                </div>`;
+        });
+    }
+    container.innerHTML = html;
+}
+
+function changeStock(drinkId, sign) {
+    const drink = menu.find(d => d.id === drinkId);
+    if (!drink) return;
+    const input = document.getElementById('skq_' + drinkId);
+    let amt = parseInt(input && input.value, 10);
+    if (isNaN(amt) || amt <= 0) amt = 1;   // prázdne pole = zmena o 1
+    drink.stock = (drink.stock || 0) + sign * amt;
+    if (drink.stock < 0) drink.stock = 0;
+    if (input) input.value = '';
+    renderSklad();       // okamžitá odozva
+    saveDrink(drink);    // ulož na pozadí
+}
+
+function setStockThreshold(drinkId, val) {
+    const drink = menu.find(d => d.id === drinkId);
+    if (!drink) return;
+    let t = parseInt(val, 10);
+    if (isNaN(t) || t < 0) t = 0;
+    drink.lowStock = t;
+    renderSklad();
+    saveDrink(drink);
+}
+
 function renderStornoBox() {
     const box = document.getElementById('stornoBox');
     const info = document.getElementById('stornoInfo');
@@ -2137,6 +2339,9 @@ function renderGuestCard(table, guest, items) {
     }
     listHtml += '</ul>';
 
+    const moveBtn = features.tables
+        ? `<button class="btn-move-guest" onclick="openMoveGuestPicker('${table}','${guest}')">🔀 Stôl</button>`
+        : '';
     return `
         <div class="ucet-card">
             <div class="ucet-header">
@@ -2145,6 +2350,7 @@ function renderGuestCard(table, guest, items) {
             </div>
             <div class="pay-row">
                 <button class="btn-add-more" onclick="addToExistingAccount('${table}','${guest}')">➕ Pridať</button>
+                ${moveBtn}
                 <button class="btn-pay-card" onclick="closeAndPayAccount('${table}','${guest}','card')">💳 Karta</button>
                 <button class="btn-pay-cash" onclick="closeAndPayAccount('${table}','${guest}','cash')">💵 Hotovosť</button>
             </div>
@@ -2158,18 +2364,47 @@ function renderAccounts() {
     const container = document.getElementById('accountsContainer');
     container.innerHTML = '';
 
-    // Otvorené účty (bez stolov) — zoradené podľa mena hosťa
-    const openAccounts = Object.values(accounts)
-        .filter(a => a.items && a.items.length > 0)
-        .sort((a, b) => a.guest.localeCompare(b.guest, 'sk'));
-
+    const openAccounts = Object.values(accounts).filter(a => a.items && a.items.length > 0);
     if (openAccounts.length === 0) {
         container.innerHTML = '<p style="color:#64748b;text-align:center;padding:10px 0;">Zatiaľ žiadne otvorené účty.</p>';
         return;
     }
 
+    // STOLY ZAPNUTÉ → zoskup podľa stola
+    if (features.tables) {
+        const byTable = {};
+        openAccounts.forEach(acc => {
+            if (!byTable[acc.table]) byTable[acc.table] = [];
+            byTable[acc.table].push(acc);
+        });
+        const tableOrder = tables.slice();
+        Object.keys(byTable).forEach(t => { if (!tableOrder.includes(t)) tableOrder.push(t); });
+
+        let html = '';
+        for (const table of tableOrder) {
+            const accs = byTable[table];
+            if (!accs || accs.length === 0) continue;
+            let tableTotal = 0;
+            accs.forEach(a => a.items.forEach(i => tableTotal += i.price));
+            let cardsHtml = '';
+            accs.forEach(a => { cardsHtml += renderGuestCard(a.table, a.guest, a.items); });
+            html += `
+                <div class="table-group">
+                    <div class="table-group-header">
+                        <span>🪑 ${table}</span>
+                        <span class="table-group-total">${tableTotal.toFixed(2)}€</span>
+                    </div>
+                    ${cardsHtml}
+                </div>`;
+        }
+        container.innerHTML = html;
+        return;
+    }
+
+    // STOLY VYPNUTÉ → účty plocho, zoradené podľa mena hosťa
+    const sorted = openAccounts.sort((a, b) => a.guest.localeCompare(b.guest, 'sk'));
     let html = '';
-    for (const acc of openAccounts) {
+    for (const acc of sorted) {
         html += renderGuestCard(acc.table, acc.guest, acc.items);
     }
     container.innerHTML = html;
