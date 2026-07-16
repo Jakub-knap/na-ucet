@@ -241,6 +241,19 @@
         .stam-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
         .stam-name { color: #38bdf8; font-weight: 800; font-size: 15px; }
         .stam-items { color: #94a3b8; font-size: 12px; line-height: 1.4; margin-top: 2px; word-break: break-word; }
+        /* Kompaktné účty — štvorčeky s menom */
+        .acc-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 6px; }
+        .acc-tile { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 14px 12px; cursor: pointer; text-align: center; -webkit-tap-highlight-color: transparent; }
+        .acc-tile.reg { border-color: #f59e0b; }
+        .acc-tile:active { transform: scale(0.97); }
+        .acc-tile-name { color: #f8fafc; font-size: 15px; font-weight: 700; word-break: break-word; margin-bottom: 6px; line-height: 1.2; }
+        .acc-tile-total { color: #10b981; font-size: 16px; font-weight: 800; }
+        /* Okno jedného účtu */
+        .account-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 8000; align-items: flex-start; justify-content: center; padding: 16px; overflow-y: auto; backdrop-filter: blur(3px); }
+        .account-modal-overlay.active { display: flex; }
+        .account-modal-inner { width: 100%; max-width: 480px; margin: 10px 0 30px; }
+        .account-modal-close { width: 100%; background: #334155; color: #e2e8f0; border: none; border-radius: 10px; padding: 13px; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 10px; }
+        .account-modal-close:active { transform: scale(0.98); }
         .cat-section-title {
             color: #38bdf8; font-size: 15px; font-weight: 800; text-transform: uppercase;
             letter-spacing: 0.5px; margin: 16px 0 8px; padding-bottom: 6px;
@@ -509,6 +522,14 @@
         </div>
     </div>
 
+    <!-- Okno jedného účtu (kompaktný režim) -->
+    <div id="accountModal" class="account-modal-overlay" onclick="if(event.target===this)closeAccountModal()">
+        <div class="account-modal-inner">
+            <button class="account-modal-close" onclick="closeAccountModal()">✕ Zavrieť</button>
+            <div id="accountModalBox"></div>
+        </div>
+    </div>
+
     <!-- Dochádzka zamestnancov -->
     <div class="admin-accordion" id="attendanceAccordion">
         <div class="admin-header" onclick="toggleAttendancePanel()">
@@ -577,6 +598,11 @@
                         <label class="switch"><input type="checkbox" id="togStamgast" onchange="toggleFeature('stamgast', this)"><span class="slider"></span></label>
                     </div>
                     <div class="help-text" id="helpStamgast">Uložení stáli hostia aj s ich obvyklou objednávkou. Ťuknutím na meno sa im rovno vytvorí účet s celou objednávkou. Štamgastov vytvoríš v sekcii ⭐ Štamgasti nižšie.</div>
+                    <div class="toggle-row">
+                        <span>📇 Kompaktné účty <span class="help-q" onclick="toggleHelp('helpCompact')">?</span></span>
+                        <label class="switch"><input type="checkbox" id="togCompact" onchange="toggleFeature('compact', this)"><span class="slider"></span></label>
+                    </div>
+                    <div class="help-text" id="helpCompact">Otvorené účty sa zobrazia len ako štvorčeky s menom (štamgasti s ⭐). Ťuknutím na meno sa cez celú obrazovku otvorí jeho účet so všetkými položkami a platbami. Vhodné, keď máš veľa otvorených účtov naraz.</div>
                     <p style="color:#64748b; font-size:12px; margin:6px 0 0; line-height:1.4;">Vypnuté moduly sa v aplikácii nezobrazujú. Sklad odpočítava zásoby z predaja len keď je zapnutý.</p>
                 </div>
             </div>
@@ -929,7 +955,8 @@ let menu = [];
 let tables = [];        // číselník: názvy stolov
 let guests = [];        // číselník: mená hostí
 let stamgasti = [];     // štamgasti: [{ guest, items:[{name,count}] }]
-let stamgastDraft = []; // rozpracovaná objednávka pri tvorbe štamgastalet employees = [];     // číselník: mená zamestnancov
+let stamgastDraft = []; // rozpracovaná objednávka pri tvorbe štamgasta
+let accountModalKey = null; // ktorý účet je otvorený v kompaktnom oknelet employees = [];     // číselník: mená zamestnancov
 let attendance = [];    // záznamy dochádzky: { id, employee, date, start, end }
 let accounts = {};      // otvorené účty: kľúč "stôl::hosť" -> { table, guest, items }
 let totalRevenue = 0;
@@ -938,7 +965,7 @@ let totalCard = 0;
 let lastPaidAccount = null;
 
 // 🧩 Voliteľné moduly (zapnúť/vypnúť v nastaveniach) — synced z Firestore
-let features = { tables: false, attendance: true, sklad: false, stamgast: false };
+let features = { tables: false, attendance: true, sklad: false, stamgast: false, compact: false };
 
 // 💳 Skúšobná verzia (7 dní) a predplatné — synced z Firestore
 const TRIAL_DAYS = 7;
@@ -999,6 +1026,7 @@ async function loadAllData() {
                     features.attendance = (d.attendance === undefined) ? true : !!d.attendance;
                     features.sklad = !!d.sklad;
                     features.stamgast = !!d.stamgast;
+                    features.compact = !!d.compact;
                 }
                 applyFeatures();
             });
@@ -1253,7 +1281,7 @@ function toggleFeature(name, el) {
 }
 function applyFeatures() {
     // Zosynchronizuj prepínače
-    const map = { tables: 'togTables', attendance: 'togAttendance', sklad: 'togSklad', stamgast: 'togStamgast' };
+    const map = { tables: 'togTables', attendance: 'togAttendance', sklad: 'togSklad', stamgast: 'togStamgast', compact: 'togCompact' };
     Object.entries(map).forEach(([key, id]) => {
         const el = document.getElementById(id);
         if (el) el.checked = features[key];
@@ -2782,10 +2810,11 @@ function renderGuestCard(table, guest, items) {
     const moveBtn = features.tables
         ? `<button class="btn-move-guest" onclick="openMoveGuestPicker('${table}','${guest}')">🔀 Stôl</button>`
         : '';
+    const isReg = features.stamgast && stamgasti.some(s => s.guest === guest);
     return `
         <div class="ucet-card">
             <div class="ucet-header">
-                <span class="customer-name"><span class="guest-icon">👤</span>${guest}</span>
+                <span class="customer-name"><span class="guest-icon">${isReg ? '⭐' : '👤'}</span>${guest}</span>
                 <span class="total-price">${total.toFixed(2)}€</span>
             </div>
             <div class="pay-row">
@@ -2807,6 +2836,7 @@ function renderAccounts() {
     const openAccounts = Object.values(accounts).filter(a => a.items && a.items.length > 0);
     if (openAccounts.length === 0) {
         container.innerHTML = '<p style="color:#64748b;text-align:center;padding:10px 0;">Zatiaľ žiadne otvorené účty.</p>';
+        refreshAccountModal();
         return;
     }
 
@@ -2826,28 +2856,70 @@ function renderAccounts() {
             if (!accs || accs.length === 0) continue;
             let tableTotal = 0;
             accs.forEach(a => a.items.forEach(i => tableTotal += i.price));
-            let cardsHtml = '';
-            accs.forEach(a => { cardsHtml += renderGuestCard(a.table, a.guest, a.items); });
+            const inner = features.compact ? accTilesHtml(accs) : accs.map(a => renderGuestCard(a.table, a.guest, a.items)).join('');
             html += `
                 <div class="table-group">
                     <div class="table-group-header">
                         <span>🪑 ${table}</span>
                         <span class="table-group-total">${tableTotal.toFixed(2)}€</span>
                     </div>
-                    ${cardsHtml}
+                    ${inner}
                 </div>`;
         }
         container.innerHTML = html;
+        refreshAccountModal();
         return;
     }
 
-    // STOLY VYPNUTÉ → účty plocho, zoradené podľa mena hosťa
+    // STOLY VYPNUTÉ → zoradené podľa mena hosťa
     const sorted = openAccounts.sort((a, b) => a.guest.localeCompare(b.guest, 'sk'));
-    let html = '';
-    for (const acc of sorted) {
-        html += renderGuestCard(acc.table, acc.guest, acc.items);
+    if (features.compact) {
+        container.innerHTML = accTilesHtml(sorted);
+    } else {
+        container.innerHTML = sorted.map(a => renderGuestCard(a.table, a.guest, a.items)).join('');
     }
-    container.innerHTML = html;
+    refreshAccountModal();
+}
+
+// Kompaktné dlaždice účtov (len meno + suma)
+function accTilesHtml(accs) {
+    let html = '<div class="acc-tiles">';
+    accs.forEach(a => {
+        let total = 0;
+        a.items.forEach(i => total += i.price);
+        const isReg = features.stamgast && stamgasti.some(s => s.guest === a.guest);
+        html += `
+            <div class="acc-tile${isReg ? ' reg' : ''}" onclick="openAccountModal('${escTile(a.table)}','${escTile(a.guest)}')">
+                <div class="acc-tile-name">${isReg ? '⭐' : '👤'} ${a.guest}</div>
+                <div class="acc-tile-total">${total.toFixed(2)}€</div>
+            </div>`;
+    });
+    html += '</div>';
+    return html;
+}
+
+// Okno jedného účtu (kompaktný režim)
+function openAccountModal(table, guest) {
+    const key = accKey(table, guest);
+    const acc = accounts[key];
+    if (!acc) return;
+    accountModalKey = key;
+    document.getElementById('accountModalBox').innerHTML = renderGuestCard(acc.table, acc.guest, acc.items);
+    document.getElementById('accountModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+function closeAccountModal() {
+    accountModalKey = null;
+    document.getElementById('accountModal').classList.remove('active');
+    document.body.style.overflow = '';
+}
+// Po zmene dát obnov obsah okna, alebo ho zavri ak účet už neexistuje (zaplatený)
+function refreshAccountModal() {
+    if (!accountModalKey) return;
+    const acc = accounts[accountModalKey];
+    if (!acc || !acc.items || acc.items.length === 0) { closeAccountModal(); return; }
+    const box = document.getElementById('accountModalBox');
+    if (box) box.innerHTML = renderGuestCard(acc.table, acc.guest, acc.items);
 }
 </script>
 
