@@ -331,6 +331,16 @@
         .btn-add-more:hover { background-color: #0ea5e9; }
         .btn-pay-cash, .btn-pay-card { padding: 12px 8px; font-size: 14px; }
         .drink-list { list-style-type: none; }
+        /* Riadky položiek v otvorenom účte — väčšie, prehľadné +/- */
+        .acc-item { display: flex; align-items: center; gap: 8px; background: #1e293b; padding: 8px 10px; border-radius: 10px; margin-bottom: 8px; }
+        .acc-item-left { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+        .acc-count { font-weight: 800; color: #38bdf8; background: #0f172a; padding: 3px 9px; border-radius: 6px; font-size: 14px; flex: 0 0 auto; }
+        .acc-name { color: #f8fafc; font-size: 15px; font-weight: 600; word-break: break-word; }
+        .acc-sum { font-weight: 800; color: #10b981; font-size: 15px; white-space: nowrap; margin-right: 2px; }
+        .acc-btn { width: 42px; height: 42px; border: none; border-radius: 10px; font-size: 24px; font-weight: 800; color: #fff; cursor: pointer; flex: 0 0 auto; -webkit-tap-highlight-color: transparent; }
+        .acc-btn.plus { background: #10b981; }
+        .acc-btn.minus { background: #475569; }
+        .acc-btn:active { transform: scale(0.94); }
         .drink-item { font-size: 15px; color: #cbd5e1; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #1e293b; padding: 8px 10px; border-radius: 8px; }
         .drink-info { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; }
         .drink-info > span:last-child { word-break: break-word; }
@@ -1559,21 +1569,18 @@ function renderPickerGrid() {
             if (drinksInCat.length === 0) return; // prázdnu kategóriu preskoč
 
             html += `<div class="cat-section-title">${cat.icon} ${cat.name}</div>`;
-            html += '<div class="cat-section">';
+            html += '<div class="tile-grid cat-section">';
             drinksInCat.forEach(d => {
                 const cnt = pendingDrinks[d.name] || 0;
                 const picked = cnt > 0 ? ' picked' : '';
+                const minusBtn = cnt > 0 ? `<div class="tile-minus" onclick="minusDrink(event,'${escTile(d.name)}')">−</div>` : '';
+                const badge = cnt > 0 ? `<div class="tile-count">${cnt}</div>` : '';
                 html += `
-                    <div class="drink-row${picked}">
-                        <div class="drink-row-info">
-                            <span class="dr-name">${cat.icon} ${d.name}</span>
-                            <span class="dr-price">${d.price.toFixed(2)}€</span>
-                        </div>
-                        <div class="drink-row-controls">
-                            <button class="dr-btn minus" onclick="minusDrink(event,'${escTile(d.name)}')">−</button>
-                            <span class="dr-count">${cnt}</span>
-                            <button class="dr-btn plus" onclick="toggleDrink('${escTile(d.name)}')">+</button>
-                        </div>
+                    <div class="tile tile-drink${picked}" onclick="toggleDrink('${escTile(d.name)}')" oncontextmenu="return minusDrink(event,'${escTile(d.name)}')">
+                        ${minusBtn}${badge}
+                        <div class="tile-icon">${cat.icon}</div>
+                        <div class="tile-name">${d.name}</div>
+                        <div class="tile-price">${d.price.toFixed(2)}€</div>
                     </div>`;
             });
             html += '</div>';
@@ -2169,6 +2176,7 @@ async function confirmMoveGuest(newTable) {
 async function changeItemCount(table, guest, drinkName, action) {
     const key = accKey(table, guest);
     if (!accounts[key]) return;
+    if (navigator.vibrate) navigator.vibrate(10);
     const items = [...accounts[key].items];
 
     if (action === 'plus') {
@@ -2566,13 +2574,14 @@ function renderGuestCard(table, guest, items) {
     for (const [drinkName, info] of Object.entries(drinkData)) {
         const total2 = info.singlePrice * info.count;
         listHtml += `
-            <li class="drink-item">
-                <div class="drink-info"><span class="count-badge">${info.count}ks</span><span>${drinkName}</span></div>
-                <div class="controls">
-                    <span class="drink-sum">${total2.toFixed(2)}€</span>
-                    <button class="btn-calc btn-minus" onclick="changeItemCount('${table}','${guest}','${drinkName}','minus')">−</button>
-                    <button class="btn-calc btn-plus-small" onclick="changeItemCount('${table}','${guest}','${drinkName}','plus')">+</button>
+            <li class="acc-item">
+                <div class="acc-item-left">
+                    <span class="acc-count">${info.count}×</span>
+                    <span class="acc-name">${drinkName}</span>
                 </div>
+                <span class="acc-sum">${total2.toFixed(2)}€</span>
+                <button class="acc-btn minus" onclick="changeItemCount('${table}','${guest}','${drinkName}','minus')">−</button>
+                <button class="acc-btn plus" onclick="changeItemCount('${table}','${guest}','${drinkName}','plus')">+</button>
             </li>`;
     }
     listHtml += '</ul>';
