@@ -616,7 +616,7 @@
     <h2>Nahadzovanie objednávok</h2>
     <div class="row row-vertical" style="background: #1e293b; padding: 12px; border-radius: 10px;">
         <!-- Ukazovateľ aktuálneho výberu -->
-        <div id="selectionBar" class="selection-bar">Vyber hosťa →</div>
+        <div id="selectionBar" class="selection-bar">← výber nápoj alebo hosťa →</div>
 
         <!-- veľké ikony -->
         <div class="big-actions">
@@ -1227,7 +1227,7 @@ function renderSelectionBar() {
         bar.textContent = `✓ ${selGuest}`;
         bar.classList.add('active');
     } else {
-        bar.textContent = 'Vyber hosťa →';
+        bar.textContent = '← výber nápoj alebo hosťa →';
         bar.classList.remove('active');
     }
 }
