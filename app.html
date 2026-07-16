@@ -242,6 +242,18 @@
         }
         .cat-section-title:first-child { margin-top: 0; }
         .cat-section { margin-bottom: 6px; }
+        /* Riadkové karty nápojov (veľké +/- proti prekliku) */
+        .drink-row { border: 1px solid #334155; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; background: #0f172a; }
+        .drink-row.picked { border-color: #38bdf8; background: #0f2534; }
+        .drink-row-info { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+        .dr-name { font-size: 16px; font-weight: 700; color: #f8fafc; line-height: 1.2; }
+        .dr-price { font-size: 16px; font-weight: 800; color: #10b981; white-space: nowrap; }
+        .drink-row-controls { display: flex; align-items: center; gap: 12px; }
+        .dr-btn { flex: 1; height: 52px; border: none; border-radius: 10px; font-size: 28px; font-weight: 800; color: #fff; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .dr-btn.plus { background: #10b981; }
+        .dr-btn.minus { background: #475569; }
+        .dr-btn:active { transform: scale(0.96); }
+        .dr-count { min-width: 46px; text-align: center; font-size: 24px; font-weight: 800; color: #38bdf8; }
         .cat-tile { min-height: 56px; padding: 8px; }
         .cat-tile .tile-icon { font-size: 20px; margin-bottom: 2px; }
         .cat-tile .tile-name { font-size: 12px; }
@@ -1547,18 +1559,21 @@ function renderPickerGrid() {
             if (drinksInCat.length === 0) return; // prázdnu kategóriu preskoč
 
             html += `<div class="cat-section-title">${cat.icon} ${cat.name}</div>`;
-            html += '<div class="tile-grid cat-section">';
+            html += '<div class="cat-section">';
             drinksInCat.forEach(d => {
                 const cnt = pendingDrinks[d.name] || 0;
                 const picked = cnt > 0 ? ' picked' : '';
-                const minusBtn = cnt > 0 ? `<div class="tile-minus" onclick="minusDrink(event,'${escTile(d.name)}')">−</div>` : '';
-                const badge = cnt > 0 ? `<div class="tile-count">${cnt}</div>` : '';
                 html += `
-                    <div class="tile tile-drink${picked}" onclick="toggleDrink('${escTile(d.name)}')" oncontextmenu="return minusDrink(event,'${escTile(d.name)}')">
-                        ${minusBtn}${badge}
-                        <div class="tile-icon">${cat.icon}</div>
-                        <div class="tile-name">${d.name}</div>
-                        <div class="tile-price">${d.price.toFixed(2)}€</div>
+                    <div class="drink-row${picked}">
+                        <div class="drink-row-info">
+                            <span class="dr-name">${cat.icon} ${d.name}</span>
+                            <span class="dr-price">${d.price.toFixed(2)}€</span>
+                        </div>
+                        <div class="drink-row-controls">
+                            <button class="dr-btn minus" onclick="minusDrink(event,'${escTile(d.name)}')">−</button>
+                            <span class="dr-count">${cnt}</span>
+                            <button class="dr-btn plus" onclick="toggleDrink('${escTile(d.name)}')">+</button>
+                        </div>
                     </div>`;
             });
             html += '</div>';
@@ -1589,20 +1604,22 @@ function pickCategory(c) {
     renderPickerGrid();
 }
 
-// Klik na nápoj = pridaj do rozklikaných (+1)
+// Klik na + = pridaj do rozklikaných (+1)
 function toggleDrink(drinkName) {
     pendingDrinks[drinkName] = (pendingDrinks[drinkName] || 0) + 1;
+    if (navigator.vibrate) navigator.vibrate(10); // jemné brnknutie = potvrdenie
     renderPickerGrid();
     if (quickSaleMode) updateQuickSaleTotal();
     else updateConfirmButton();
 }
-// Mínus tlačidlo na dlaždici / dlhé podržanie = uber (-1)
+// Klik na − (alebo dlhé podržanie) = uber (-1)
 function minusDrink(e, drinkName) {
     e.preventDefault();
-    e.stopPropagation(); // aby klik na mínus nespustil aj pridanie (+1) cez dlaždicu
+    e.stopPropagation();
     if (pendingDrinks[drinkName] > 0) {
         pendingDrinks[drinkName]--;
         if (pendingDrinks[drinkName] === 0) delete pendingDrinks[drinkName];
+        if (navigator.vibrate) navigator.vibrate(10);
         renderPickerGrid();
         if (quickSaleMode) updateQuickSaleTotal();
         else updateConfirmButton();
