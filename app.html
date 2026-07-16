@@ -72,8 +72,18 @@
         .admin-header:hover { background: #334155; }
         .admin-icon { font-size: 14px; transition: transform 0.3s ease; }
         .admin-content { padding: 0 16px; max-height: 0; opacity: 0; overflow: hidden; transition: all 0.3s ease-in-out; background: #111827; }
-        .admin-accordion.open .admin-content { padding: 16px; max-height: 3000px; opacity: 1; }
+        .admin-accordion.open .admin-content { padding: 16px; max-height: 6000px; opacity: 1; }
         .admin-accordion.open .admin-icon { transform: rotate(180deg); }
+        /* Prehľadné rozbaľovacie skupiny v nastaveniach */
+        .set-group { border: 1px solid #334155; border-radius: 10px; margin-bottom: 10px; overflow: hidden; background: #0f172a; }
+        .set-group-head { padding: 13px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; font-weight: 700; color: #f8fafc; font-size: 15px; }
+        .set-group-head:hover { background: #1e293b; }
+        .set-chevron { transition: transform 0.2s; color: #94a3b8; font-size: 12px; }
+        .set-group.open .set-chevron { transform: rotate(180deg); }
+        .set-group-body { display: none; padding: 4px 14px 14px; }
+        .set-group.open .set-group-body { display: block; }
+        .set-group-body h3 { margin-top: 14px; }
+        .set-group-body h3:first-child { margin-top: 4px; }
 
         .row { display: flex; gap: 10px; margin-bottom: 12px; width: 100%; }
         .row-vertical { flex-direction: column; gap: 8px; }
@@ -463,89 +473,114 @@
             <span class="admin-icon" id="adminIcon">▼</span>
         </div>
         <div class="admin-content">
-            <h3 style="margin-top:0;">🧩 Moduly (zapnúť / vypnúť)</h3>
-            <div class="toggle-row">
-                <span>🪑 Stoly</span>
-                <label class="switch"><input type="checkbox" id="togTables" onchange="toggleFeature('tables', this)"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-                <span>🕐 Dochádzka</span>
-                <label class="switch"><input type="checkbox" id="togAttendance" onchange="toggleFeature('attendance', this)"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-                <span>📦 Sklad</span>
-                <label class="switch"><input type="checkbox" id="togSklad" onchange="toggleFeature('sklad', this)"><span class="slider"></span></label>
-            </div>
-            <p style="color:#64748b; font-size:12px; margin:6px 0 16px; line-height:1.4;">Vypnuté moduly sa v aplikácii nezobrazujú. Sklad odpočítava zásoby z predaja len keď je zapnutý.</p>
-
-            <div id="tableSettings" style="display:none; border-top:1px dashed #334155; padding-top:15px;">
-                <h3 style="margin-top:0;">Pridať stôl</h3>
-                <div class="row">
-                    <input type="text" id="newTableName" placeholder="Názov stola (napr. Stôl č.1, Štamgasti...)">
-                    <button class="btn-add" onclick="addTable()">+</button>
-                </div>
-                <h3 style="margin-top: 15px; color: #38bdf8;">Vymazať stôl</h3>
-                <div class="row row-vertical">
-                    <select id="deleteTableSelect">
-                        <option value="">-- Vyber stôl na zmazanie --</option>
-                    </select>
-                    <button class="btn-delete-admin" onclick="deleteTableFromSystem()">Vymazať stôl</button>
+            <!-- 🧩 Moduly -->
+            <div class="set-group open">
+                <div class="set-group-head" onclick="toggleSetGroup(this)"><span>🧩 Moduly (zapnúť / vypnúť)</span><span class="set-chevron">▼</span></div>
+                <div class="set-group-body">
+                    <div class="toggle-row">
+                        <span>🪑 Stoly</span>
+                        <label class="switch"><input type="checkbox" id="togTables" onchange="toggleFeature('tables', this)"><span class="slider"></span></label>
+                    </div>
+                    <div class="toggle-row">
+                        <span>🕐 Dochádzka</span>
+                        <label class="switch"><input type="checkbox" id="togAttendance" onchange="toggleFeature('attendance', this)"><span class="slider"></span></label>
+                    </div>
+                    <div class="toggle-row">
+                        <span>📦 Sklad</span>
+                        <label class="switch"><input type="checkbox" id="togSklad" onchange="toggleFeature('sklad', this)"><span class="slider"></span></label>
+                    </div>
+                    <p style="color:#64748b; font-size:12px; margin:6px 0 0; line-height:1.4;">Vypnuté moduly sa v aplikácii nezobrazujú. Sklad odpočítava zásoby z predaja len keď je zapnutý.</p>
                 </div>
             </div>
 
-            <h3>Pridať hosťa</h3>
-            <div class="row">
-                <input type="text" id="newGuestName" placeholder="Meno hosťa (napr. Jozef, Ján...)">
-                <button class="btn-add" onclick="addGuest()">+</button>
-            </div>
-
-            <h3 style="margin-top: 15px;">Pridať nový nápoj</h3>
-            <div class="row row-vertical">
-                <select id="newDrinkCategory">
-                    <option value="PivoCap">🍺 Pivo čapované</option>
-                    <option value="PivoFla">🍾 Pivo fľaškové</option>
-                    <option value="Vino">🍷 Víno</option>
-                    <option value="Destilat">🥃 Alkohol</option>
-                    <option value="Alkohol02">🍸 Alkohol 0.2</option>
-                    <option value="Nealko">🥤 Nealko fľaškové</option>
-                    <option value="Cigarety">🚬 Cigarety</option>
-                    <option value="Ostatne">🍿 Pochutiny</option>
-                </select>
-                <input type="text" id="newDrinkName" placeholder="Názov (napr. Plzeň 12...)">
-                <div class="row" style="margin-bottom: 0;">
-                    <input type="number" id="newDrinkPrice" step="0.10" placeholder="Cena v € (napr. 1.80)">
-                    <button class="btn-add" onclick="addDrink()">+</button>
+            <!-- 🍺 Nápoje -->
+            <div class="set-group">
+                <div class="set-group-head" onclick="toggleSetGroup(this)"><span>🍺 Nápoje</span><span class="set-chevron">▼</span></div>
+                <div class="set-group-body">
+                    <h3>Pridať nový nápoj</h3>
+                    <div class="row row-vertical">
+                        <select id="newDrinkCategory">
+                            <option value="PivoCap">🍺 Pivo čapované</option>
+                            <option value="PivoFla">🍾 Pivo fľaškové</option>
+                            <option value="MalePivo">🍺 Malé pivo</option>
+                            <option value="Vino">🍷 Víno</option>
+                            <option value="Destilat">🥃 Alkohol</option>
+                            <option value="Alkohol02">🍸 Alkohol 0.2</option>
+                            <option value="Nealko">🥤 Nealko fľaškové</option>
+                            <option value="Cigarety">🚬 Cigarety</option>
+                            <option value="Ostatne">🍿 Pochutiny</option>
+                        </select>
+                        <input type="text" id="newDrinkName" placeholder="Názov (napr. Plzeň 12...)">
+                        <div class="row" style="margin-bottom: 0;">
+                            <input type="number" id="newDrinkPrice" step="0.10" placeholder="Cena v € (napr. 1.80)">
+                            <button class="btn-add" onclick="addDrink()">+</button>
+                        </div>
+                    </div>
+                    <h3>Vymazať nápoj</h3>
+                    <div class="row row-vertical">
+                        <select id="deleteDrinkSelect">
+                            <option value="">-- Vyber nápoj na zmazanie --</option>
+                        </select>
+                        <button class="btn-delete-admin" onclick="deleteDrinkFromSystem()">Vymazať nápoj</button>
+                    </div>
                 </div>
             </div>
 
-            <h3 style="margin-top: 25px; color: #38bdf8; border-top: 1px dashed #334155; padding-top: 15px;">Vymazať hosťa</h3>
-            <div class="row row-vertical">
-                <select id="deleteGuestSelect">
-                    <option value="">-- Vyber hosťa na zmazanie --</option>
-                </select>
-                <button class="btn-delete-admin" onclick="deleteGuestFromSystem()">Vymazať hosťa</button>
+            <!-- 👤 Hostia -->
+            <div class="set-group">
+                <div class="set-group-head" onclick="toggleSetGroup(this)"><span>👤 Hostia</span><span class="set-chevron">▼</span></div>
+                <div class="set-group-body">
+                    <h3>Pridať hosťa</h3>
+                    <div class="row">
+                        <input type="text" id="newGuestName" placeholder="Meno hosťa (napr. Jozef, Ján...)">
+                        <button class="btn-add" onclick="addGuest()">+</button>
+                    </div>
+                    <h3>Vymazať hosťa</h3>
+                    <div class="row row-vertical">
+                        <select id="deleteGuestSelect">
+                            <option value="">-- Vyber hosťa na zmazanie --</option>
+                        </select>
+                        <button class="btn-delete-admin" onclick="deleteGuestFromSystem()">Vymazať hosťa</button>
+                    </div>
+                </div>
             </div>
 
-            <h3 style="margin-top: 15px; color: #38bdf8;">Vymazať nápoj</h3>
-            <div class="row row-vertical">
-                <select id="deleteDrinkSelect">
-                    <option value="">-- Vyber nápoj na zmazanie --</option>
-                </select>
-                <button class="btn-delete-admin" onclick="deleteDrinkFromSystem()">Vymazať nápoj</button>
+            <!-- 👷 Zamestnanci -->
+            <div class="set-group">
+                <div class="set-group-head" onclick="toggleSetGroup(this)"><span>👷 Zamestnanci</span><span class="set-chevron">▼</span></div>
+                <div class="set-group-body">
+                    <h3>Pridať zamestnanca</h3>
+                    <div class="row">
+                        <input type="text" id="newEmployeeName" placeholder="Meno zamestnanca">
+                        <button class="btn-add" onclick="addEmployee()">+</button>
+                    </div>
+                    <h3>Vymazať zamestnanca</h3>
+                    <div class="row row-vertical">
+                        <select id="deleteEmployeeSelect">
+                            <option value="">-- Vyber zamestnanca na zmazanie --</option>
+                        </select>
+                        <button class="btn-delete-admin" onclick="deleteEmployeeFromSystem()">Vymazať zamestnanca</button>
+                    </div>
+                </div>
             </div>
 
-            <h3 style="margin-top: 25px; color: #38bdf8; border-top: 1px dashed #334155; padding-top: 15px;">👷 Pridať zamestnanca</h3>
-            <div class="row">
-                <input type="text" id="newEmployeeName" placeholder="Meno zamestnanca">
-                <button class="btn-add" onclick="addEmployee()">+</button>
-            </div>
-
-            <h3 style="margin-top: 15px; color: #38bdf8;">Vymazať zamestnanca</h3>
-            <div class="row row-vertical">
-                <select id="deleteEmployeeSelect">
-                    <option value="">-- Vyber zamestnanca na zmazanie --</option>
-                </select>
-                <button class="btn-delete-admin" onclick="deleteEmployeeFromSystem()">Vymazať zamestnanca</button>
+            <!-- 🪑 Stoly (zobrazí sa len keď je modul zapnutý) -->
+            <div class="set-group" id="tableSettings" style="display:none;">
+                <div class="set-group-head" onclick="toggleSetGroup(this)"><span>🪑 Stoly</span><span class="set-chevron">▼</span></div>
+                <div class="set-group-body">
+                    <h3>Pridať stôl</h3>
+                    <div class="row">
+                        <input type="text" id="newTableName" placeholder="Názov stola (napr. Stôl č.1, Štamgasti...)">
+                        <button class="btn-add" onclick="addTable()">+</button>
+                    </div>
+                    <h3>Vymazať stôl</h3>
+                    <div class="row row-vertical">
+                        <select id="deleteTableSelect">
+                            <option value="">-- Vyber stôl na zmazanie --</option>
+                        </select>
+                        <button class="btn-delete-admin" onclick="deleteTableFromSystem()">Vymazať stôl</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -808,6 +843,7 @@ let selCategory = 'Vsetko';
 const CATEGORIES = [
     { id: 'PivoCap',   icon: '🍺', name: 'Pivo čapované' },
     { id: 'PivoFla',   icon: '🍾', name: 'Pivo fľaškové' },
+    { id: 'MalePivo',  icon: '🍺', name: 'Malé pivo' },
     { id: 'Vino',      icon: '🍷', name: 'Víno' },
     { id: 'Destilat',  icon: '🥃', name: 'Alkohol' },
     { id: 'Alkohol02', icon: '🍸', name: 'Alkohol 0.2' },
@@ -2219,6 +2255,11 @@ function adjustRevenue(method, sign) {
     input.value = '';
     renderStats();
     saveStats();
+}
+
+// Rozbalenie/zbalenie skupiny v nastaveniach
+function toggleSetGroup(head) {
+    head.parentElement.classList.toggle('open');
 }
 
 // Schovať/zobraziť dlhý zoznam predaja podľa kategórií (aby bola úprava tržby hneď dostupná)
