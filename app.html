@@ -198,6 +198,19 @@
         }
         .tile-minus:active { transform: scale(0.9); background: #dc2626; }
         .tile-empty { color: #64748b; font-size: 14px; text-align: center; padding: 16px; grid-column: 1 / -1; }
+        /* Prázdny stav (onboarding) v pickeri */
+        .picker-empty { text-align: center; padding: 30px 18px; }
+        .picker-empty .pe-icon { font-size: 46px; margin-bottom: 10px; }
+        .picker-empty .pe-title { color: #f8fafc; font-size: 17px; font-weight: 800; margin-bottom: 8px; }
+        .picker-empty .pe-desc { color: #94a3b8; font-size: 14px; line-height: 1.5; margin-bottom: 16px; }
+        .picker-empty .pe-desc b { color: #38bdf8; }
+        .pe-btn { display: inline-block; background: #38bdf8; color: #0f172a; border: none; border-radius: 12px; padding: 14px 20px; font-size: 15px; font-weight: 800; cursor: pointer; }
+        .pe-btn:active { transform: scale(0.97); }
+        /* Otáznik s nápovedou */
+        .help-q { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: #334155; color: #cbd5e1; font-size: 13px; font-weight: 800; cursor: pointer; margin-left: 6px; vertical-align: middle; }
+        .help-q:active { background: #475569; }
+        .help-text { display: none; background: #1e293b; border-left: 3px solid #38bdf8; border-radius: 8px; padding: 10px 12px; margin: -2px 0 10px; color: #cbd5e1; font-size: 13px; line-height: 1.5; }
+        .help-text.show { display: block; }
         .cat-section-title {
             color: #38bdf8; font-size: 15px; font-weight: 800; text-transform: uppercase;
             letter-spacing: 0.5px; margin: 16px 0 8px; padding-bottom: 6px;
@@ -478,23 +491,26 @@
                 <div class="set-group-head" onclick="toggleSetGroup(this)"><span>🧩 Moduly (zapnúť / vypnúť)</span><span class="set-chevron">▼</span></div>
                 <div class="set-group-body">
                     <div class="toggle-row">
-                        <span>🪑 Stoly</span>
+                        <span>🪑 Stoly <span class="help-q" onclick="toggleHelp('helpTables')">?</span></span>
                         <label class="switch"><input type="checkbox" id="togTables" onchange="toggleFeature('tables', this)"><span class="slider"></span></label>
                     </div>
+                    <div class="help-text" id="helpTables">Účty rozdelené podľa stolov. Zapni, ak chceš hosťa priradiť ku konkrétnemu stolu. Keď je vypnuté, účet stačí otvoriť len na meno hosťa.</div>
                     <div class="toggle-row">
-                        <span>🕐 Dochádzka</span>
+                        <span>🕐 Dochádzka <span class="help-q" onclick="toggleHelp('helpAttendance')">?</span></span>
                         <label class="switch"><input type="checkbox" id="togAttendance" onchange="toggleFeature('attendance', this)"><span class="slider"></span></label>
                     </div>
+                    <div class="help-text" id="helpAttendance">Evidencia príchodov a odchodov zamestnancov. Zapni, ak chceš zapisovať odpracované zmeny a mať z nich prehľad.</div>
                     <div class="toggle-row">
-                        <span>📦 Sklad</span>
+                        <span>📦 Sklad <span class="help-q" onclick="toggleHelp('helpSklad')">?</span></span>
                         <label class="switch"><input type="checkbox" id="togSklad" onchange="toggleFeature('sklad', this)"><span class="slider"></span></label>
                     </div>
+                    <div class="help-text" id="helpSklad">Sleduje zásoby nápojov. Pri predaji sa množstvo automaticky odpočíta a upozorní ťa, keď niečoho ostáva málo. Množstvá nastavíš v sekcii 📦 Sklad.</div>
                     <p style="color:#64748b; font-size:12px; margin:6px 0 0; line-height:1.4;">Vypnuté moduly sa v aplikácii nezobrazujú. Sklad odpočítava zásoby z predaja len keď je zapnutý.</p>
                 </div>
             </div>
 
             <!-- 🍺 Nápoje -->
-            <div class="set-group">
+            <div class="set-group" id="grpNapoje">
                 <div class="set-group-head" onclick="toggleSetGroup(this)"><span>🍺 Nápoje</span><span class="set-chevron">▼</span></div>
                 <div class="set-group-body">
                     <h3>Pridať nový nápoj</h3>
@@ -1343,7 +1359,15 @@ function renderPickerGrid() {
     grid.innerHTML = '';
 
     if (pickerMode === 'table') {
-        if (tables.length === 0) { grid.innerHTML = '<div class="tile-empty">Žiadne stoly. Pridaj ich v nastaveniach.</div>'; return; }
+        if (tables.length === 0) {
+            grid.innerHTML = `<div class="picker-empty">
+                <div class="pe-icon">🪑</div>
+                <div class="pe-title">Zatiaľ nemáš žiadne stoly</div>
+                <div class="pe-desc">Pridaj si stoly, ku ktorým budeš priraďovať hostí. Otvor <b>⚙️ Nastavenia → 🪑 Stoly</b> a pridaj svoj prvý stôl.</div>
+                <button class="pe-btn" onclick="goToSettings('tableSettings')">⚙️ Otvoriť nastavenia</button>
+            </div>`;
+            return;
+        }
         let html = '<div class="tile-grid">';
         tables.forEach(t => {
             const sel = t === selTable ? ' selected' : '';
@@ -1374,7 +1398,11 @@ function renderPickerGrid() {
         </div>`;
 
         if (guests.length === 0) {
-            html += '<div class="tile-empty">Žiadni uložení hostia. Pridaj ich tlačidlom vyššie.</div>';
+            html += `<div class="picker-empty">
+                <div class="pe-icon">👤</div>
+                <div class="pe-title">Zatiaľ nemáš žiadnych hostí</div>
+                <div class="pe-desc">Pridaj hosťa tlačidlom <b>👤+ Nový hosť</b> hore ☝️<br>Alebo použi <b>👋 Jednorázový hosť</b> pre rýchly účet bez ukladania mena.</div>
+            </div>`;
         } else {
             html += '<div class="tile-grid guests">';
             guests.forEach(g => {
@@ -1390,7 +1418,15 @@ function renderPickerGrid() {
         grid.innerHTML = html;
     }
     else if (pickerMode === 'drink') {
-        if (menu.length === 0) { grid.innerHTML = '<div class="tile-empty">Žiadne nápoje. Pridaj ich v nastaveniach.</div>'; return; }
+        if (menu.length === 0) {
+            grid.innerHTML = `<div class="picker-empty">
+                <div class="pe-icon">🍺</div>
+                <div class="pe-title">Zatiaľ nemáš žiadne nápoje</div>
+                <div class="pe-desc">Najprv si pridaj nápoje do ponuky. Otvor <b>⚙️ Nastavenia → 🍺 Nápoje</b> a pridaj svoj prvý nápoj (názov a cenu).</div>
+                <button class="pe-btn" onclick="goToSettings('grpNapoje')">⚙️ Otvoriť nastavenia</button>
+            </div>`;
+            return;
+        }
         // Zobraz nápoje zoskupené do sekcií podľa kategórie (v poradí CATEGORIES)
         let html = '';
         CATEGORIES.forEach(cat => {
@@ -2260,6 +2296,24 @@ function adjustRevenue(method, sign) {
 // Rozbalenie/zbalenie skupiny v nastaveniach
 function toggleSetGroup(head) {
     head.parentElement.classList.toggle('open');
+}
+
+// Z prázdneho okna skoč rovno do Nastavení a otvor správnu sekciu
+function goToSettings(groupId) {
+    closePicker();
+    const acc = document.getElementById('adminAccordion');
+    if (acc) acc.classList.add('open');
+    const grp = document.getElementById(groupId);
+    if (grp) grp.classList.add('open');
+    setTimeout(() => {
+        (grp || acc)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
+}
+
+// Otáznik pri module — ukáž/skry popis
+function toggleHelp(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('show');
 }
 
 // Schovať/zobraziť dlhý zoznam predaja podľa kategórií (aby bola úprava tržby hneď dostupná)
