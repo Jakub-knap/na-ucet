@@ -235,6 +235,12 @@
         .help-q:active { background: #475569; }
         .help-text { display: none; background: #1e293b; border-left: 3px solid #38bdf8; border-radius: 8px; padding: 10px 12px; margin: -2px 0 10px; color: #cbd5e1; font-size: 13px; line-height: 1.5; }
         .help-text.show { display: block; }
+        /* Štamgasti */
+        .stam-draft-row { display: flex; justify-content: space-between; align-items: center; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; margin-top: 6px; color: #e2e8f0; font-size: 14px; }
+        .stam-draft-row button { background: #475569; color: #fff; border: none; border-radius: 6px; width: 28px; height: 28px; font-size: 14px; font-weight: 800; cursor: pointer; flex: 0 0 auto; }
+        .stam-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+        .stam-name { color: #38bdf8; font-weight: 800; font-size: 15px; }
+        .stam-items { color: #94a3b8; font-size: 12px; line-height: 1.4; margin-top: 2px; word-break: break-word; }
         .cat-section-title {
             color: #38bdf8; font-size: 15px; font-weight: 800; text-transform: uppercase;
             letter-spacing: 0.5px; margin: 16px 0 8px; padding-bottom: 6px;
@@ -566,6 +572,11 @@
                         <label class="switch"><input type="checkbox" id="togSklad" onchange="toggleFeature('sklad', this)"><span class="slider"></span></label>
                     </div>
                     <div class="help-text" id="helpSklad">Sleduje zásoby nápojov. Pri predaji sa množstvo automaticky odpočíta a upozorní ťa, keď niečoho ostáva málo. Množstvá nastavíš v sekcii 📦 Sklad.</div>
+                    <div class="toggle-row">
+                        <span>⭐ Štamgast <span class="help-q" onclick="toggleHelp('helpStamgast')">?</span></span>
+                        <label class="switch"><input type="checkbox" id="togStamgast" onchange="toggleFeature('stamgast', this)"><span class="slider"></span></label>
+                    </div>
+                    <div class="help-text" id="helpStamgast">Uložení stáli hostia aj s ich obvyklou objednávkou. Ťuknutím na meno sa im rovno vytvorí účet s celou objednávkou. Štamgastov vytvoríš v sekcii ⭐ Štamgasti nižšie.</div>
                     <p style="color:#64748b; font-size:12px; margin:6px 0 0; line-height:1.4;">Vypnuté moduly sa v aplikácii nezobrazujú. Sklad odpočítava zásoby z predaja len keď je zapnutý.</p>
                 </div>
             </div>
@@ -577,9 +588,9 @@
                     <h3>Pridať nový nápoj</h3>
                     <div class="row row-vertical">
                         <select id="newDrinkCategory">
-                            <option value="PivoCap">🍺 Pivo čapované</option>
-                            <option value="PivoFla">🍾 Pivo fľaškové</option>
-                            <option value="MalePivo">🍺 Malé pivo</option>
+                            <option value="PivoCap">🍺 Čapované veľké pivo</option>
+                            <option value="MalePivo">🍺 Čapované malé pivo</option>
+                            <option value="PivoFla">🍾 Fľaškové pivo</option>
                             <option value="Vino">🍷 Víno</option>
                             <option value="Destilat">🥃 Alkohol</option>
                             <option value="Alkohol02">🍸 Alkohol 0.2</option>
@@ -659,10 +670,29 @@
                     </div>
                 </div>
             </div>
+            <!-- ⭐ Štamgasti (zobrazí sa len keď je modul zapnutý) -->
+            <div class="set-group" id="stamgastSettings" style="display:none;">
+                <div class="set-group-head" onclick="toggleSetGroup(this)"><span>⭐ Štamgasti</span><span class="set-chevron">▼</span></div>
+                <div class="set-group-body">
+                    <h3>Vytvoriť štamgasta</h3>
+                    <p style="color:#64748b; font-size:12px; margin:0 0 8px; line-height:1.4;">Vyber hosťa zo zoznamu a naklikaj mu obvyklú objednávku.</p>
+                    <div class="row row-vertical">
+                        <select id="stamgastGuestSelect"><option value="">-- Vyber hosťa --</option></select>
+                        <div class="row" style="margin-bottom:0; gap:8px;">
+                            <select id="stamgastDrinkSelect" style="flex:2;"><option value="">-- Vyber nápoj --</option></select>
+                            <input type="number" id="stamgastQty" value="1" min="1" style="flex:1; width:60px;">
+                            <button class="btn-add" onclick="addStamgastItem()">+</button>
+                        </div>
+                    </div>
+                    <div id="stamgastDraft"></div>
+                    <button class="btn-add" style="width:100%; margin-top:10px;" onclick="saveStamgast()">💾 Uložiť štamgasta</button>
+
+                    <h3 style="margin-top:18px;">Uložení štamgasti</h3>
+                    <div id="stamgastList"></div>
+                </div>
+            </div>
         </div>
     </div>
-
-    <!-- 📦 Sklad -->
     <div class="admin-accordion" id="skladAccordion" style="display:none;">
         <div class="admin-header" onclick="toggleSkladPanel()">
             <span>📦 Sklad</span>
@@ -695,6 +725,11 @@
                 <div class="big-icon">🪑</div>
                 <div class="big-label">Stoly</div>
                 <div class="big-sub" id="subTable">—</div>
+            </div>
+            <div class="big-action" id="bigActionStamgast" style="display:none;" onclick="openPicker('stamgast')">
+                <div class="big-icon">⭐</div>
+                <div class="big-label">Štamgast</div>
+                <div class="big-sub">stály hosť</div>
             </div>
         </div>
 
@@ -893,7 +928,8 @@ auth.onAuthStateChanged(user => {
 let menu = [];
 let tables = [];        // číselník: názvy stolov
 let guests = [];        // číselník: mená hostí
-let employees = [];     // číselník: mená zamestnancov
+let stamgasti = [];     // štamgasti: [{ guest, items:[{name,count}] }]
+let stamgastDraft = []; // rozpracovaná objednávka pri tvorbe štamgastalet employees = [];     // číselník: mená zamestnancov
 let attendance = [];    // záznamy dochádzky: { id, employee, date, start, end }
 let accounts = {};      // otvorené účty: kľúč "stôl::hosť" -> { table, guest, items }
 let totalRevenue = 0;
@@ -902,7 +938,7 @@ let totalCard = 0;
 let lastPaidAccount = null;
 
 // 🧩 Voliteľné moduly (zapnúť/vypnúť v nastaveniach) — synced z Firestore
-let features = { tables: false, attendance: true, sklad: false };
+let features = { tables: false, attendance: true, sklad: false, stamgast: false };
 
 // 💳 Skúšobná verzia (7 dní) a predplatné — synced z Firestore
 const TRIAL_DAYS = 7;
@@ -923,9 +959,9 @@ let selCategory = 'Vsetko';
 // Definícia kategórií (pre dlaždice + ikony nápojov)
 // Kategórie produktov (id sa ukladá do Firestore, name+icon sa zobrazuje)
 const CATEGORIES = [
-    { id: 'PivoCap',   icon: '🍺', name: 'Pivo čapované' },
-    { id: 'PivoFla',   icon: '🍾', name: 'Pivo fľaškové' },
-    { id: 'MalePivo',  icon: '🍺', name: 'Malé pivo' },
+    { id: 'PivoCap',   icon: '🍺', name: 'Čapované veľké pivo' },
+    { id: 'MalePivo',  icon: '🍺', name: 'Čapované malé pivo' },
+    { id: 'PivoFla',   icon: '🍾', name: 'Fľaškové pivo' },
     { id: 'Vino',      icon: '🍷', name: 'Víno' },
     { id: 'Destilat',  icon: '🥃', name: 'Alkohol' },
     { id: 'Alkohol02', icon: '🍸', name: 'Alkohol 0.2' },
@@ -962,10 +998,20 @@ async function loadAllData() {
                     features.tables = !!d.tables;
                     features.attendance = (d.attendance === undefined) ? true : !!d.attendance;
                     features.sklad = !!d.sklad;
+                    features.stamgast = !!d.stamgast;
                 }
                 applyFeatures();
             });
         unsubscribeListeners.push(unsubFeatures);
+
+        // 0c. Štamgasti — real-time
+        const unsubStam = userRef.collection('stamgasti')
+            .onSnapshot(snap => {
+                stamgasti = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if (features.stamgast) renderStamgastList();
+                if (pickerMode === 'stamgast') renderPickerGrid();
+            });
+        unsubscribeListeners.push(unsubStam);
 
         // 0b. Predplatné / skúšobná verzia — real-time
         const subRef = userRef.collection('settings').doc('subscription');
@@ -1207,7 +1253,7 @@ function toggleFeature(name, el) {
 }
 function applyFeatures() {
     // Zosynchronizuj prepínače
-    const map = { tables: 'togTables', attendance: 'togAttendance', sklad: 'togSklad' };
+    const map = { tables: 'togTables', attendance: 'togAttendance', sklad: 'togSklad', stamgast: 'togStamgast' };
     Object.entries(map).forEach(([key, id]) => {
         const el = document.getElementById(id);
         if (el) el.checked = features[key];
@@ -1223,10 +1269,16 @@ function applyFeatures() {
     // Sklad
     const sklad = document.getElementById('skladAccordion');
     if (sklad) sklad.style.display = features.sklad ? '' : 'none';
+    // Štamgast — veľká ikona + nastavenia
+    const stAction = document.getElementById('bigActionStamgast');
+    if (stAction) stAction.style.display = features.stamgast ? '' : 'none';
+    const stSettings = document.getElementById('stamgastSettings');
+    if (stSettings) stSettings.style.display = features.stamgast ? '' : 'none';
 
     updateDropdowns();
     renderAccounts();
     if (features.sklad) renderSklad();
+    if (features.stamgast) { renderStamgastList(); renderStamgastDraft(); }
 }
 
 // --- Číselník: stoly ---
@@ -1313,6 +1365,22 @@ function toggleAdminPanel() {
 }
 
 function updateDropdowns() {
+    // --- Štamgast dropdowny (hostia + nápoje) ---
+    const stGuestSel = document.getElementById('stamgastGuestSelect');
+    if (stGuestSel) {
+        const cur = stGuestSel.value;
+        stGuestSel.innerHTML = '<option value="">-- Vyber hosťa --</option>';
+        guests.forEach(g => { stGuestSel.innerHTML += `<option value="${g}">${g}</option>`; });
+        stGuestSel.value = cur;
+    }
+    const stDrinkSel = document.getElementById('stamgastDrinkSelect');
+    if (stDrinkSel) {
+        const cur = stDrinkSel.value;
+        stDrinkSel.innerHTML = '<option value="">-- Vyber nápoj --</option>';
+        menu.forEach(d => { stDrinkSel.innerHTML += `<option value="${d.name}">${d.name} (${d.price.toFixed(2)}€)</option>`; });
+        stDrinkSel.value = cur;
+    }
+
     // --- Mazacie dropdowny (zostávajú v nastaveniach) ---
     const delTableSel = document.getElementById('deleteTableSelect');
     if (delTableSel) {
@@ -1383,6 +1451,7 @@ function openPicker(mode) {
 
     if (mode === 'table') { title.textContent = '🪑 Vyber stôl'; cats.style.display = 'none'; confirmBar.style.display = 'none'; }
     if (mode === 'guest') { title.textContent = '👤 Vyber hosťa'; cats.style.display = 'none'; confirmBar.style.display = 'none'; }
+    if (mode === 'stamgast') { title.textContent = '⭐ Vyber štamgasta'; cats.style.display = 'none'; confirmBar.style.display = 'none'; }
     if (mode === 'drink') {
         title.textContent = '🍺 Vyber nápoje';
         cats.style.display = 'none';
@@ -1493,6 +1562,31 @@ function renderPickerGrid() {
     if (!grid || !pickerMode) return;
     grid.innerHTML = '';
 
+    if (pickerMode === 'stamgast') {
+        if (stamgasti.length === 0) {
+            grid.innerHTML = `<div class="picker-empty">
+                <div class="pe-icon">⭐</div>
+                <div class="pe-title">Zatiaľ nemáš žiadnych štamgastov</div>
+                <div class="pe-desc">Vytvor si štamgasta v <b>⚙️ Nastavenia → ⭐ Štamgasti</b> — vyber hosťa a naklikaj mu obvyklú objednávku.</div>
+                <button class="pe-btn" onclick="goToSettings('stamgastSettings')">⚙️ Otvoriť nastavenia</button>
+            </div>`;
+            return;
+        }
+        let html = '<div class="tile-grid">';
+        stamgasti.slice().sort((a,b)=>a.guest.localeCompare(b.guest,'sk')).forEach(s => {
+            const cnt = (s.items || []).reduce((n,i)=>n+(i.count||0),0);
+            html += `
+                <div class="tile" onclick="chooseStamgast('${escTile(s.guest)}')">
+                    <div class="tile-icon">⭐</div>
+                    <div class="tile-name">${s.guest}</div>
+                    <div class="tile-price">${cnt} ks</div>
+                </div>`;
+        });
+        html += '</div>';
+        grid.innerHTML = html;
+        return;
+    }
+
     if (pickerMode === 'table') {
         if (tables.length === 0) {
             grid.innerHTML = `<div class="picker-empty">
@@ -1542,9 +1636,10 @@ function renderPickerGrid() {
             html += '<div class="tile-grid guests">';
             guests.forEach(g => {
                 const sel = g === selGuest ? ' selected' : '';
+                const isReg = features.stamgast && stamgasti.some(s => s.guest === g);
                 html += `
                     <div class="tile${sel}" onclick="chooseGuest('${escTile(g)}')">
-                        <div class="tile-icon">👤</div>
+                        <div class="tile-icon">${isReg ? '⭐' : '👤'}</div>
                         <div class="tile-name">${g}</div>
                     </div>`;
             });
@@ -1605,10 +1700,108 @@ function chooseGuest(g) {
     closePicker();
     setTimeout(() => continueFlow(), 180);
 }
+// Ťuknutie na štamgasta → rovno vytvorí/otvorí účet s jeho objednávkou
+function chooseStamgast(name) {
+    const s = stamgasti.find(x => x.guest === name);
+    closePicker();
+    if (!s) return;
+    // Zostav položky z aktuálnych cien (zmazané nápoje preskoč)
+    const items = [];
+    (s.items || []).forEach(it => {
+        const drink = menu.find(d => d.name === it.name);
+        if (!drink) return;
+        for (let i = 0; i < (it.count || 0); i++) items.push({ name: drink.name, price: drink.price });
+    });
+    const table = DEFAULT_TABLE;
+    const key = accKey(table, name);
+    const alreadyOpen = accounts[key] && accounts[key].items && accounts[key].items.length > 0;
+
+    if (items.length === 0 && !alreadyOpen) {
+        alert('Tento štamgast nemá žiadne platné položky (možno boli nápoje zmazané z ponuky).');
+        return;
+    }
+
+    const bar = document.getElementById('selectionBar');
+    if (alreadyOpen) {
+        // Účet už otvorený → nezdvojuj, len naň upozorni
+        if (bar) { bar.textContent = `⭐ ${name} už má otvorený účet`; bar.classList.add('active'); setTimeout(() => renderSelectionBar(), 2500); }
+    } else {
+        saveAccount(table, name, items);
+        if (bar) { bar.textContent = `⭐ Účet pre ${name} vytvorený`; bar.classList.add('active'); setTimeout(() => renderSelectionBar(), 2500); }
+    }
+    setTimeout(() => {
+        document.getElementById('accountsContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 200);
+}
 function pickCategory(c) {
     selCategory = c;
     renderPickerCategories();
     renderPickerGrid();
+}
+
+// ── Štamgasti: tvorba a správa v nastaveniach ──
+function addStamgastItem() {
+    const dSel = document.getElementById('stamgastDrinkSelect');
+    const qEl = document.getElementById('stamgastQty');
+    const name = dSel ? dSel.value : '';
+    let qty = parseInt(qEl && qEl.value, 10);
+    if (!name) { alert('Vyber nápoj.'); return; }
+    if (isNaN(qty) || qty < 1) qty = 1;
+    const existing = stamgastDraft.find(i => i.name === name);
+    if (existing) existing.count += qty;
+    else stamgastDraft.push({ name, count: qty });
+    if (qEl) qEl.value = 1;
+    renderStamgastDraft();
+}
+function removeStamgastDraftItem(name) {
+    stamgastDraft = stamgastDraft.filter(i => i.name !== name);
+    renderStamgastDraft();
+}
+function renderStamgastDraft() {
+    const box = document.getElementById('stamgastDraft');
+    if (!box) return;
+    if (stamgastDraft.length === 0) { box.innerHTML = ''; return; }
+    let html = '';
+    stamgastDraft.forEach(i => {
+        html += `<div class="stam-draft-row"><span>${i.count}× ${i.name}</span><button onclick="removeStamgastDraftItem('${escTile(i.name)}')">✕</button></div>`;
+    });
+    box.innerHTML = html;
+}
+async function saveStamgast() {
+    const gSel = document.getElementById('stamgastGuestSelect');
+    const guest = gSel ? gSel.value : '';
+    if (!guest) { alert('Vyber hosťa zo zoznamu.'); return; }
+    if (stamgastDraft.length === 0) { alert('Pridaj štamgastovi aspoň jednu položku.'); return; }
+    if (!userRef) return;
+    const id = btoa(encodeURIComponent(guest));
+    await userRef.collection('stamgasti').doc(id).set({
+        guest,
+        items: stamgastDraft.map(i => ({ name: i.name, count: i.count }))
+    });
+    stamgastDraft = [];
+    if (gSel) gSel.value = '';
+    renderStamgastDraft();
+    alert('Štamgast uložený! ⭐');
+}
+async function deleteStamgast(guest) {
+    if (!userRef) return;
+    if (!confirm(`Vymazať štamgasta ${guest}?`)) return;
+    const id = btoa(encodeURIComponent(guest));
+    await userRef.collection('stamgasti').doc(id).delete();
+}
+function renderStamgastList() {
+    const box = document.getElementById('stamgastList');
+    if (!box) return;
+    if (stamgasti.length === 0) { box.innerHTML = '<p style="color:#64748b; font-size:13px;">Zatiaľ žiadni štamgasti.</p>'; return; }
+    let html = '';
+    stamgasti.slice().sort((a, b) => a.guest.localeCompare(b.guest, 'sk')).forEach(s => {
+        const list = (s.items || []).map(i => `${i.count}× ${i.name}`).join(', ');
+        html += `<div class="stam-row">
+            <div style="min-width:0;"><div class="stam-name">⭐ ${s.guest}</div><div class="stam-items">${list || '—'}</div></div>
+            <button class="btn-delete-admin" style="padding:8px 12px; flex:0 0 auto;" onclick="deleteStamgast('${escTile(s.guest)}')">🗑</button>
+        </div>`;
+    });
+    box.innerHTML = html;
 }
 
 // Klik na + = pridaj do rozklikaných (+1)
