@@ -514,8 +514,8 @@
     <div id="paywallOverlay" class="paywall-overlay" onclick="if(event.target===this)closePaywall()">
         <div class="paywall-box">
             <div class="paywall-icon">💳</div>
-            <div class="paywall-title">Skúšobná verzia skončila</div>
-            <div class="paywall-desc">7-dňová skúšobná verzia sa skončila. Pre ďalšie používanie appky si aktivuj predplatné.</div>
+            <div class="paywall-title" id="paywallTitle">Aktivuj predplatné</div>
+            <div class="paywall-desc" id="paywallDesc">Predplatné sa neobnovuje automaticky. Zaplať a získaš 30 dní prístupu.</div>
             <div class="paywall-price">0,99 € <span>/ mesiac</span></div>
             <button class="paywall-btn" onclick="startSubscription()">💳 Aktivovať predplatné</button>
             <button class="paywall-close" onclick="closePaywall()">Zavrieť</button>
@@ -970,7 +970,8 @@ let features = { tables: false, attendance: true, sklad: false, stamgast: false,
 
 // 💳 Skúšobná verzia (7 dní) a predplatné — synced z Firestore
 const TRIAL_DAYS = 7;
-let subscription = { trialStart: null, subscribed: false };
+let subscription = { trialStart: null, subscribed: false, subEndsAt: null };
+const RENEW_WARN_DAYS = 5; // koľko dní pred koncom sa ukáže pripomienka
 let trialLocked = false;
 
 // Pomocné: kľúč účtu zo stola a hosťa
@@ -1056,6 +1057,7 @@ async function loadAllData() {
             const d = doc.data();
             subscription.subscribed = !!d.subscribed;
             subscription.trialStart = (d.trialStart && d.trialStart.toDate) ? d.trialStart.toDate() : new Date();
+            subscription.subEndsAt = (d.subEndsAt && d.subEndsAt.toDate) ? d.subEndsAt.toDate() : null;
             applyTrialState();
         });
         unsubscribeListeners.push(unsubSub);
@@ -1223,39 +1225,81 @@ async function saveLastPaid() {
 
 // 🧩 Moduly — uloženie a aplikovanie
 // 💳 Skúšobná verzia + paywall
-function trialDaysLeft() {
-    const DAY = 86400000;
-    const start = subscription.trialStart ? subscription.trialStart.getTime() : Date.now();
+// Zisti aktuálny stav prístupu: skúška (trial) alebo zaplatené obdobie (paid)
+function computeAccess() {
+    const DAY = 86400000, now = Date.now();
+    if (subscription.subEndsAt) {
+        const end = subscription.subEndsAt.getTime();
+        return { mode: 'paid', end, msLeft: end - now };
+    }
+    const start = subscription.trialStart ? subscription.trialStart.getTime() : now;
     const end = start + TRIAL_DAYS * DAY;
-    return Math.max(0, Math.ceil((end - Date.now()) / DAY));
+    return { mode: 'trial', end, msLeft: end - now };
+}
+function accessDaysLeft() {
+    const DAY = 86400000;
+    return Math.max(0, Math.ceil(computeAccess().msLeft / DAY));
 }
 function applyTrialState() {
-    const DAY = 86400000;
-    const start = subscription.trialStart ? subscription.trialStart.getTime() : Date.now();
-    const end = start + TRIAL_DAYS * DAY;
-    trialLocked = !subscription.subscribed && (Date.now() >= end);
+    const a = computeAccess();
+    trialLocked = a.msLeft <= 0;   // uzamknuté keď skúška aj zaplatené obdobie vypršali
     renderTrialBanner();
     const sales = document.getElementById('salesArea');
     if (sales) sales.classList.toggle('locked-area', trialLocked);
 }
 function dayWord(n) { return n === 1 ? 'deň' : (n >= 2 && n <= 4 ? 'dni' : 'dní'); }
+function fmtDate(ms) {
+    const d = new Date(ms);
+    return `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
+}
 function renderTrialBanner() {
     const b = document.getElementById('trialBanner');
     if (!b) return;
-    if (subscription.subscribed) { b.style.display = 'none'; return; }
-    b.style.display = 'block';
-    if (trialLocked) {
+    const a = computeAccess();
+    const days = accessDaysLeft();
+
+    // Vypršané (skúška aj predplatné) → červený zámok
+    if (a.msLeft <= 0) {
+        b.style.display = 'block';
         b.className = 'trial-banner locked';
-        b.innerHTML = `⛔ <b>Skúšobná verzia skončila.</b> Pre pokračovanie si aktivuj predplatné.
+        const t = a.mode === 'paid' ? 'Predplatné vypršalo.' : 'Skúšobná verzia skončila.';
+        b.innerHTML = `⛔ <b>${t}</b> Pre pokračovanie zaplať predplatné.
             <br><button class="trial-cta" onclick="showPaywall()">💳 Predplatiť 0,99 €/mes.</button>`;
-    } else {
-        const d = trialDaysLeft();
-        b.className = 'trial-banner';
-        b.innerHTML = `🎁 Skúšobná verzia — zostáva <b>${d} ${dayWord(d)}</b>.
-            <br><button class="trial-cta ghost" onclick="showPaywall()">💳 Predplatiť teraz</button>`;
+        return;
     }
+
+    // Zaplatené a beží
+    if (a.mode === 'paid') {
+        // Viac ako 5 dní do konca → žiadne otravovanie
+        if (days > RENEW_WARN_DAYS) { b.style.display = 'none'; return; }
+        // 5 dní alebo menej → pripomienka na predĺženie
+        b.style.display = 'block';
+        b.className = 'trial-banner locked';
+        b.innerHTML = `⏳ <b>Predplatné končí o ${days} ${dayWord(days)}</b> (${fmtDate(a.end)}). Predĺž, nech nemáš výpadok.
+            <br><button class="trial-cta" onclick="showPaywall()">💳 Predĺžiť predplatné</button>`;
+        return;
+    }
+
+    // Skúšobná verzia beží
+    b.style.display = 'block';
+    b.className = 'trial-banner';
+    b.innerHTML = `🎁 Skúšobná verzia — zostáva <b>${days} ${dayWord(days)}</b>.
+        <br><button class="trial-cta ghost" onclick="showPaywall()">💳 Predplatiť teraz</button>`;
 }
 function showPaywall() {
+    // Prispôsob text podľa toho, či skončila skúška alebo vypršalo predplatné
+    const a = computeAccess();
+    const titleEl = document.getElementById('paywallTitle');
+    const descEl = document.getElementById('paywallDesc');
+    if (titleEl && descEl) {
+        if (a.mode === 'paid') {
+            titleEl.textContent = a.msLeft <= 0 ? 'Predplatné vypršalo' : 'Predĺženie predplatného';
+            descEl.textContent = 'Predplatné sa neobnovuje automaticky. Zaplať a získaš ďalších 30 dní prístupu.';
+        } else {
+            titleEl.textContent = 'Aktivuj predplatné';
+            descEl.textContent = 'Predplatné sa neobnovuje automaticky. Zaplať a získaš 30 dní prístupu.';
+        }
+    }
     document.getElementById('paywallOverlay').classList.add('active');
     document.body.style.overflow = 'hidden';
 }
@@ -1264,10 +1308,12 @@ function closePaywall() {
     document.body.style.overflow = '';
 }
 function startSubscription() {
-    // 🔜 STRIPE (posledný krok):
-    // Tu sa spustí Stripe Checkout. Po úspešnej platbe Stripe webhook
-    // nastaví v Firestore settings/subscription → { subscribed: true }.
-    // Listener vyššie to zachytí a appku automaticky odomkne.
+    // 🔜 STRIPE (posledný krok) — JEDNORAZOVÁ platba, nie opakované predplatné:
+    // Použije sa Stripe Checkout v režime 'payment' (nie 'subscription'),
+    // takže sa NIČ neúčtuje automaticky a netreba žiadne rušenie odberu.
+    // Po úspešnej platbe webhook vo Firestore settings/subscription nastaví:
+    //   subEndsAt = max(teraz, doterajšie subEndsAt) + 30 dní
+    // Listener to zachytí a prístup sa predĺži/odomkne.
     alert('Platba cez Stripe bude čoskoro dostupná. Ďakujeme za záujem! 💳');
 }
 
