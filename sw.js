@@ -3,7 +3,7 @@
 // Pri KAŽDEJ zmene súborov appky zvýš číslo verzie nižšie,
 // aby si používatelia stiahli novú verziu (inak im ostane stará z cache).
 // ============================================================
-const CACHE = 'na-ucet-v17';
+const CACHE = 'na-ucet-v18';
 
 // App shell — súbory potrebné, aby sa appka načítala aj offline.
 const APP_SHELL = [

@@ -956,7 +956,8 @@ let tables = [];        // číselník: názvy stolov
 let guests = [];        // číselník: mená hostí
 let stamgasti = [];     // štamgasti: [{ guest, items:[{name,count}] }]
 let stamgastDraft = []; // rozpracovaná objednávka pri tvorbe štamgasta
-let accountModalKey = null; // ktorý účet je otvorený v kompaktnom oknelet employees = [];     // číselník: mená zamestnancov
+let accountModalKey = null; // ktorý účet je otvorený v kompaktnom okne
+let pendingStamgast = null; // štamgast čakajúci na výber stola (keď sú stoly zapnuté)let employees = [];     // číselník: mená zamestnancov
 let attendance = [];    // záznamy dochádzky: { id, employee, date, start, end }
 let accounts = {};      // otvorené účty: kľúč "stôl::hosť" -> { table, guest, items }
 let totalRevenue = 0;
@@ -1568,6 +1569,7 @@ function closePicker() {
     document.body.style.overflow = '';
     pickerMode = null;
     quickSaleMode = false;
+    pendingStamgast = null;
 }
 
 // Kategórie v okne nápojov
@@ -1717,6 +1719,14 @@ function escTile(s) { return String(s).replace(/'/g, "\\'"); }
 
 // ── VÝBER V OKNE ──
 function chooseTable(t) {
+    // Ak čaká štamgast na stôl, vytvor mu účet na tomto stole
+    if (pendingStamgast) {
+        const name = pendingStamgast;
+        pendingStamgast = null;
+        closePicker();
+        createStamgastAccount(name, t);
+        return;
+    }
     selTable = t;
     renderSelectionBar();
     closePicker();
@@ -1728,19 +1738,29 @@ function chooseGuest(g) {
     closePicker();
     setTimeout(() => continueFlow(), 180);
 }
-// Ťuknutie na štamgasta → rovno vytvorí/otvorí účet s jeho objednávkou
+// Ťuknutie na štamgasta → vytvorí/otvorí účet s jeho objednávkou.
+// Keď sú Stoly zapnuté, najprv sa vyberie stôl (aby účet nespadol mimo stolov).
 function chooseStamgast(name) {
     const s = stamgasti.find(x => x.guest === name);
+    if (!s) { closePicker(); return; }
+    if (features.tables) {
+        pendingStamgast = name;
+        openPicker('table'); // rovnaké okno prepne na výber stola
+        return;
+    }
     closePicker();
+    createStamgastAccount(name, DEFAULT_TABLE);
+}
+// Spoločná tvorba účtu štamgasta na danom stole
+function createStamgastAccount(name, table) {
+    const s = stamgasti.find(x => x.guest === name);
     if (!s) return;
-    // Zostav položky z aktuálnych cien (zmazané nápoje preskoč)
     const items = [];
     (s.items || []).forEach(it => {
         const drink = menu.find(d => d.name === it.name);
         if (!drink) return;
         for (let i = 0; i < (it.count || 0); i++) items.push({ name: drink.name, price: drink.price });
     });
-    const table = DEFAULT_TABLE;
     const key = accKey(table, name);
     const alreadyOpen = accounts[key] && accounts[key].items && accounts[key].items.length > 0;
 
@@ -1748,10 +1768,8 @@ function chooseStamgast(name) {
         alert('Tento štamgast nemá žiadne platné položky (možno boli nápoje zmazané z ponuky).');
         return;
     }
-
     const bar = document.getElementById('selectionBar');
     if (alreadyOpen) {
-        // Účet už otvorený → nezdvojuj, len naň upozorni
         if (bar) { bar.textContent = `⭐ ${name} už má otvorený účet`; bar.classList.add('active'); setTimeout(() => renderSelectionBar(), 2500); }
     } else {
         saveAccount(table, name, items);
