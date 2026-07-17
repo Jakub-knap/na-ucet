@@ -311,6 +311,8 @@
         .sklad-btn:active { transform: scale(0.94); }
         .sklad-thresh-wrap { display: flex; align-items: center; gap: 5px; margin-left: auto; color: #94a3b8; font-size: 12px; }
         .sklad-thresh { width: 56px; padding: 8px; border: 2px solid #334155; border-radius: 8px; background: #fff; color: #000; font-size: 14px; font-weight: 600; outline: none; text-align: center; }
+        .sklad-del { background: #475569; color: #fff; border: none; border-radius: 8px; width: 40px; height: 40px; font-size: 16px; cursor: pointer; flex: 0 0 auto; }
+        .sklad-del:active { transform: scale(0.94); }
         .btn-pay-cash { background-color: #10b981; color: white; padding: 8px 12px; font-size: 13px; border-radius: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
         .btn-pay-cash:hover { background-color: #059669; }
         .btn-pay-card { background-color: #3b82f6; color: white; padding: 8px 12px; font-size: 13px; border-radius: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -592,7 +594,7 @@
                         <span>📦 Sklad <span class="help-q" onclick="toggleHelp('helpSklad')">?</span></span>
                         <label class="switch"><input type="checkbox" id="togSklad" onchange="toggleFeature('sklad', this)"><span class="slider"></span></label>
                     </div>
-                    <div class="help-text" id="helpSklad">Sleduje zásoby nápojov. Pri predaji sa množstvo automaticky odpočíta a upozorní ťa, keď niečoho ostáva málo. Množstvá nastavíš v sekcii 📦 Sklad.</div>
+                    <div class="help-text" id="helpSklad">Vlastný zoznam zásob — fľaše, sudy, balenia. Pridáš položku, nastavíš množstvo a hranicu upozornenia. Spravuješ ho ručne (+/−) a appka ťa upozorní, keď niečoho ostáva málo. Vhodné aj pre alkohol na deci, kde sa v sklade rátajú fľaše.</div>
                     <div class="toggle-row">
                         <span>⭐ Štamgast <span class="help-q" onclick="toggleHelp('helpStamgast')">?</span></span>
                         <label class="switch"><input type="checkbox" id="togStamgast" onchange="toggleFeature('stamgast', this)"><span class="slider"></span></label>
@@ -725,8 +727,28 @@
             <span class="admin-icon" id="skladIcon">▼</span>
         </div>
         <div class="admin-content" id="skladContent">
-            <p style="color:#64748b; font-size:12px; margin:0 0 12px; line-height:1.4;">Všetky nápoje z ponuky sú tu automaticky. Nastav množstvo (+/−) a hranicu, pri ktorej ťa appka upozorní. Pri predaji sa zásoba automaticky odpočíta.</p>
-            <div id="skladContainer"></div>
+            <p style="color:#64748b; font-size:12px; margin:0 0 12px; line-height:1.4;">Pridaj si veci, ktoré máš reálne na sklade — fľaše, sudy, balenia. Spravuješ ich ručne (+/−) a appka ťa upozorní, keď niečoho ostáva málo.</p>
+            <h3 style="margin-top:0;">Pridať do skladu</h3>
+            <div class="row row-vertical">
+                <input type="text" id="whName" placeholder="Názov (napr. Borovička 0,7 l)">
+                <div class="row" style="margin-bottom:0; gap:8px;">
+                    <input type="number" id="whQty" placeholder="Množstvo" min="0" step="1" style="flex:2;">
+                    <select id="whUnit" style="flex:1;">
+                        <option value="ks">ks</option>
+                        <option value="fľaša">fľaša</option>
+                        <option value="l">l</option>
+                        <option value="kg">kg</option>
+                        <option value="bal">balenie</option>
+                        <option value="sud">sud</option>
+                    </select>
+                </div>
+                <div class="row" style="margin-bottom:0; gap:8px; align-items:center;">
+                    <span style="color:#94a3b8; font-size:13px; white-space:nowrap;">Upozorniť pod:</span>
+                    <input type="number" id="whLow" placeholder="napr. 3" min="0" style="flex:1;">
+                    <button class="btn-add" onclick="addWarehouseItem()">+ Pridať</button>
+                </div>
+            </div>
+            <div id="skladContainer" style="margin-top:14px;"></div>
         </div>
     </div>
 
@@ -955,6 +977,7 @@ let menu = [];
 let tables = [];        // číselník: názvy stolov
 let guests = [];        // číselník: mená hostí
 let stamgasti = [];     // štamgasti: [{ guest, items:[{name,count}] }]
+let warehouse = [];     // sklad: [{ id, name, qty, unit, lowStock }]
 let stamgastDraft = []; // rozpracovaná objednávka pri tvorbe štamgasta
 let accountModalKey = null; // ktorý účet je otvorený v kompaktnom okne
 let pendingStamgast = null; // štamgast čakajúci na výber stola (keď sú stoly zapnuté)let employees = [];     // číselník: mená zamestnancov
@@ -1042,6 +1065,14 @@ async function loadAllData() {
                 if (pickerMode === 'stamgast') renderPickerGrid();
             });
         unsubscribeListeners.push(unsubStam);
+
+        // 0d. Sklad — real-time
+        const unsubWh = userRef.collection('warehouse')
+            .onSnapshot(snap => {
+                warehouse = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if (features.sklad) renderSklad();
+            });
+        unsubscribeListeners.push(unsubWh);
 
         // 0b. Predplatné / skúšobná verzia — real-time
         const subRef = userRef.collection('settings').doc('subscription');
@@ -1587,7 +1618,6 @@ async function quickSalePay(method) {
         if (!drink) continue;
         suma += drink.price * count;
         drink.sold = (drink.sold || 0) + count;
-        if (features.sklad) drink.stock = (drink.stock || 0) - count;
         await saveDrink(drink);
     }
 
@@ -2488,12 +2518,11 @@ async function closeAndPayAccount(table, guest, method) {
 
     lastPaidAccount = { table, guest, total: accountTotal, method, items: [...items] };
 
-    // Aktualizuj sold na nápojoch (+ odpočítaj zo skladu ak je zapnutý)
+    // Aktualizuj počítadlo predaných na nápojoch
     for (const item of items) {
         const drink = menu.find(d => d.name === item.name);
         if (drink) {
             drink.sold = (drink.sold || 0) + 1;
-            if (features.sklad) drink.stock = (drink.stock || 0) - 1;
             await saveDrink(drink);
         }
     }
@@ -2526,7 +2555,6 @@ async function undoLastPayment() {
         const drink = menu.find(d => d.name === item.name);
         if (drink && drink.sold > 0) {
             drink.sold--;
-            if (features.sklad) drink.stock = (drink.stock || 0) + 1;
             await saveDrink(drink);
         }
     }
@@ -2778,59 +2806,85 @@ function toggleSkladPanel() {
 function renderSklad() {
     const container = document.getElementById('skladContainer');
     if (!container) return;
-    if (menu.length === 0) {
-        container.innerHTML = '<p style="color:#64748b;text-align:center;padding:10px 0;">Zatiaľ žiadne nápoje. Pridaj ich v nastaveniach.</p>';
+    if (warehouse.length === 0) {
+        container.innerHTML = '<p style="color:#64748b;text-align:center;padding:10px 0;">Sklad je prázdny. Pridaj prvú položku vyššie.</p>';
         return;
     }
+    const sorted = warehouse.slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'sk'));
     let html = '';
-    for (const cat of CATEGORIES) {
-        const drinks = menu.filter(d => (d.category || 'Ostatne') === cat.id);
-        if (drinks.length === 0) continue;
-        html += `<div class="sklad-cat-title">${cat.icon} ${cat.name}</div>`;
-        drinks.forEach(d => {
-            const stock = d.stock || 0;
-            const low = d.lowStock || 0;
-            const isLow = low > 0 && stock <= low;
-            const idEsc = escTile(d.id);
-            html += `
-                <div class="sklad-item${isLow ? ' low' : ''}">
-                    <div class="sklad-top">
-                        <span class="sklad-name">${d.name}</span>
-                        <span class="sklad-qty">${stock} ks${isLow ? '<span class="sklad-warn">⚠ nízka</span>' : ''}</span>
-                    </div>
-                    <div class="sklad-controls">
-                        <input type="number" class="sklad-input" id="skq_${d.id}" placeholder="ks" min="1">
-                        <button class="sklad-btn plus" onclick="changeStock('${idEsc}', 1)">+</button>
-                        <button class="sklad-btn minus" onclick="changeStock('${idEsc}', -1)">−</button>
-                        <span class="sklad-thresh-wrap">pod <input type="number" class="sklad-thresh" min="0" value="${low}" onchange="setStockThreshold('${idEsc}', this.value)"> ks</span>
-                    </div>
-                </div>`;
-        });
-    }
+    sorted.forEach(it => {
+        const qty = it.qty || 0;
+        const low = it.lowStock || 0;
+        const unit = it.unit || 'ks';
+        const isLow = low > 0 && qty <= low;
+        const idEsc = escTile(it.id);
+        html += `
+            <div class="sklad-item${isLow ? ' low' : ''}">
+                <div class="sklad-top">
+                    <span class="sklad-name">${it.name}</span>
+                    <span class="sklad-qty">${qty} ${unit}${isLow ? '<span class="sklad-warn">⚠ nízka</span>' : ''}</span>
+                </div>
+                <div class="sklad-controls">
+                    <input type="number" class="sklad-input" id="whq_${it.id}" placeholder="+/−" min="1">
+                    <button class="sklad-btn plus" onclick="changeWarehouseQty('${idEsc}', 1)">+</button>
+                    <button class="sklad-btn minus" onclick="changeWarehouseQty('${idEsc}', -1)">−</button>
+                    <span class="sklad-thresh-wrap">pod <input type="number" class="sklad-thresh" min="0" value="${low}" onchange="setWarehouseThreshold('${idEsc}', this.value)"></span>
+                    <button class="sklad-del" onclick="deleteWarehouseItem('${idEsc}')">🗑</button>
+                </div>
+            </div>`;
+    });
     container.innerHTML = html;
 }
 
-function changeStock(drinkId, sign) {
-    const drink = menu.find(d => d.id === drinkId);
-    if (!drink) return;
-    const input = document.getElementById('skq_' + drinkId);
-    let amt = parseInt(input && input.value, 10);
-    if (isNaN(amt) || amt <= 0) amt = 1;   // prázdne pole = zmena o 1
-    drink.stock = (drink.stock || 0) + sign * amt;
-    if (drink.stock < 0) drink.stock = 0;
-    if (input) input.value = '';
-    renderSklad();       // okamžitá odozva
-    saveDrink(drink);    // ulož na pozadí
+function whSave(it) {
+    if (!userRef) return;
+    userRef.collection('warehouse').doc(it.id).set({
+        name: it.name, qty: it.qty || 0, unit: it.unit || 'ks', lowStock: it.lowStock || 0
+    });
 }
 
-function setStockThreshold(drinkId, val) {
-    const drink = menu.find(d => d.id === drinkId);
-    if (!drink) return;
-    let t = parseInt(val, 10);
-    if (isNaN(t) || t < 0) t = 0;
-    drink.lowStock = t;
+async function addWarehouseItem() {
+    const nameEl = document.getElementById('whName');
+    const qtyEl = document.getElementById('whQty');
+    const unitEl = document.getElementById('whUnit');
+    const lowEl = document.getElementById('whLow');
+    const name = (nameEl.value || '').trim();
+    if (!name) { alert('Zadaj názov položky.'); return; }
+    let qty = parseInt(qtyEl.value, 10); if (isNaN(qty) || qty < 0) qty = 0;
+    let low = parseInt(lowEl.value, 10); if (isNaN(low) || low < 0) low = 0;
+    const unit = unitEl.value || 'ks';
+    if (!userRef) return;
+    const id = 'wh_' + Date.now();
+    await userRef.collection('warehouse').doc(id).set({ name, qty, unit, lowStock: low });
+    nameEl.value = ''; qtyEl.value = ''; lowEl.value = '';
+}
+
+function changeWarehouseQty(id, sign) {
+    const it = warehouse.find(x => x.id === id);
+    if (!it) return;
+    const input = document.getElementById('whq_' + id);
+    let amt = parseInt(input && input.value, 10);
+    if (isNaN(amt) || amt <= 0) amt = 1;   // prázdne pole = zmena o 1
+    it.qty = (it.qty || 0) + sign * amt;
+    if (it.qty < 0) it.qty = 0;
+    if (input) input.value = '';
     renderSklad();
-    saveDrink(drink);
+    whSave(it);
+}
+
+function setWarehouseThreshold(id, val) {
+    const it = warehouse.find(x => x.id === id);
+    if (!it) return;
+    let t = parseInt(val, 10); if (isNaN(t) || t < 0) t = 0;
+    it.lowStock = t;
+    renderSklad();
+    whSave(it);
+}
+
+async function deleteWarehouseItem(id) {
+    const it = warehouse.find(x => x.id === id);
+    if (!confirm(`Vymazať zo skladu: ${it ? it.name : 'položku'}?`)) return;
+    if (userRef) await userRef.collection('warehouse').doc(id).delete();
 }
 
 function renderStornoBox() {
