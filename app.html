@@ -301,6 +301,9 @@
         .sklad-item.neg { border-color: #ef4444; background: #1f0f0f; }
         .sklad-item.neg .sklad-qty { color: #ef4444; }
         .sklad-vol { color: #94a3b8; font-size: 12px; margin: -4px 0 8px; }
+        .sklad-postup { background: #0f2a3d; border: 1px solid #38bdf8; border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; color: #cbd5e1; font-size: 13px; line-height: 1.5; }
+        .sklad-postup b { color: #38bdf8; }
+        .sklad-alert-badge { display: inline-flex; align-items: center; gap: 4px; background: #f59e0b; color: #0f172a; font-size: 12px; font-weight: 800; border-radius: 999px; padding: 2px 9px; margin-left: 6px; vertical-align: middle; animation: pulse 1.6s infinite; }
         /* Načatá fľaša — zelený pásik zostatku */
         .bottle-wrap { background: #0b1424; border: 1px solid #1e293b; border-radius: 10px; padding: 10px 12px; margin: -2px 0 10px; }
         .bottle-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
@@ -756,11 +759,13 @@
     </div>
     <div class="admin-accordion" id="skladAccordion" style="display:none;">
         <div class="admin-header" onclick="toggleSkladPanel()">
-            <span>📦 Sklad</span>
+            <span>📦 Sklad <span class="sklad-alert-badge" id="skladAlertBadge" style="display:none;">⚠️</span></span>
             <span class="admin-icon" id="skladIcon">▼</span>
         </div>
         <div class="admin-content" id="skladContent">
-            <p style="color:#64748b; font-size:12px; margin:0 0 12px; line-height:1.4;">Pridaj si veci, ktoré máš reálne na sklade — fľaše, sudy, balenia. Spravuješ ich ručne (+/−) a appka ťa upozorní, keď niečoho ostáva málo.</p>
+            <div class="sklad-postup">
+                <b>📋 Postup:</b> 1) Pridaj do skladu fľaše/sudy (pri rozlievaní zadaj objem). 2) Napoj nápoje z ponuky na sklad — buď pri pridávaní nápoja, alebo tu nižšie v „Napojiť nápoj na sklad".
+            </div>
             <h3 style="margin-top:0;">Pridať do skladu</h3>
             <div class="row row-vertical">
                 <input type="text" id="whName" placeholder="Názov (napr. Borovička 0,7 l)">
@@ -796,7 +801,30 @@
                     <button class="btn-add" onclick="addWarehouseItem()">+ Pridať</button>
                 </div>
             </div>
-            <div id="skladContainer" style="margin-top:14px;"></div>
+            <h3 style="margin-top:16px;">🔗 Napojiť nápoj na sklad</h3>
+            <p style="color:#64748b; font-size:12px; margin:0 0 8px; line-height:1.4;">Pre nápoje, ktoré už máš v ponuke. Vyber nápoj, sklad a porciu.</p>
+            <div class="row row-vertical">
+                <select id="linkDrinkSel"><option value="">-- Vyber nápoj z ponuky --</option></select>
+                <div class="row" style="margin-bottom:0; gap:8px;">
+                    <select id="linkWhSel" style="flex:2;"><option value="">📦 Bez skladu (odpojiť)</option></select>
+                    <select id="linkPortionSel" style="flex:1;">
+                        <option value="0">1 ks</option>
+                        <option value="0.02">0,02 l</option>
+                        <option value="0.04">0,04 l</option>
+                        <option value="0.05">0,05 l</option>
+                        <option value="0.1">0,1 l</option>
+                        <option value="0.2">0,2 l</option>
+                        <option value="0.3">0,3 l</option>
+                        <option value="0.4">0,4 l</option>
+                        <option value="0.5">0,5 l</option>
+                    </select>
+                </div>
+                <button class="btn-add" style="width:100%;" onclick="linkDrinkToWarehouse()">🔗 Napojiť</button>
+            </div>
+            <div id="linkedDrinksList" style="margin-top:8px;"></div>
+
+            <h3 style="margin-top:16px;">Zásoby</h3>
+            <div id="skladContainer" style="margin-top:6px;"></div>
         </div>
     </div>
 
@@ -1026,6 +1054,7 @@ let tables = [];        // číselník: názvy stolov
 let guests = [];        // číselník: mená hostí
 let stamgasti = [];     // štamgasti: [{ guest, items:[{name,count}] }]
 let warehouse = [];     // sklad: [{ id, name, qty, unit, lowStock }]
+let whAdjStep = {};     // zapamätaný krok doladenia fľašky pre každú položku
 let stamgastDraft = []; // rozpracovaná objednávka pri tvorbe štamgasta
 let accountModalKey = null; // ktorý účet je otvorený v kompaktnom okne
 let pendingStamgast = null; // štamgast čakajúci na výber stola (keď sú stoly zapnuté)let employees = [];     // číselník: mená zamestnancov
@@ -1119,6 +1148,7 @@ async function loadAllData() {
             .onSnapshot(snap => {
                 warehouse = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 if (features.sklad) renderSklad();
+                updateSkladBadge();
                 updateDropdowns();
             });
         unsubscribeListeners.push(unsubWh);
@@ -1405,6 +1435,10 @@ function toggleFeature(name, el) {
     features[name] = el.checked;
     saveFeatures();
     applyFeatures();
+    // Pri zapnutí Skladu ukáž postup nastavenia
+    if (name === 'sklad' && el.checked) {
+        alert('📦 Sklad zapnutý!\n\nPostup nastavenia:\n1) V sekcii Sklad pridaj fľaše/sudy (pri rozlievaní zadaj objem, napr. 0,7 l).\n2) Napoj nápoje z ponuky na sklad — pri pridávaní nápoja, alebo v Sklade cez „Napojiť nápoj na sklad".\n\nBez napojenia sa zásoby pri predaji neodpočítavajú.');
+    }
 }
 function applyFeatures() {
     // Zosynchronizuj prepínače
@@ -1530,6 +1564,27 @@ function updateDropdowns() {
         });
         whSel.value = cur;
     }
+    // --- Napojenie existujúceho nápoja na sklad ---
+    const linkD = document.getElementById('linkDrinkSel');
+    if (linkD) {
+        const cur = linkD.value;
+        linkD.innerHTML = '<option value="">-- Vyber nápoj z ponuky --</option>';
+        menu.slice().sort((a,b)=>a.name.localeCompare(b.name,'sk')).forEach(d => {
+            const mark = d.whId ? ' 🔗' : '';
+            linkD.innerHTML += `<option value="${d.name}">${d.name}${mark}</option>`;
+        });
+        linkD.value = cur;
+    }
+    const linkW = document.getElementById('linkWhSel');
+    if (linkW) {
+        const cur = linkW.value;
+        linkW.innerHTML = '<option value="">📦 Bez skladu (odpojiť)</option>';
+        warehouse.slice().sort((a,b)=>(a.name||'').localeCompare(b.name||'','sk')).forEach(w => {
+            linkW.innerHTML += `<option value="${w.id}">📦 ${w.name}</option>`;
+        });
+        linkW.value = cur;
+    }
+    renderLinkedDrinks();
     // --- Štamgast dropdowny (hostia + nápoje) ---
     const stGuestSel = document.getElementById('stamgastGuestSelect');
     if (stGuestSel) {
@@ -2871,7 +2926,24 @@ function toggleSkladPanel() {
     document.getElementById('skladAccordion').classList.toggle('open');
 }
 
+// ⚠️ Výkričník na hlavičke Skladu, keď je niečo pod limitom alebo v mínuse
+function updateSkladBadge() {
+    const badge = document.getElementById('skladAlertBadge');
+    if (!badge) return;
+    const alerts = warehouse.filter(it => {
+        const qty = it.qty || 0, low = it.lowStock || 0;
+        return qty < 0 || (low > 0 && qty <= low);
+    }).length;
+    if (alerts > 0 && features.sklad) {
+        badge.style.display = 'inline-flex';
+        badge.textContent = `⚠️ ${alerts}`;
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
 function renderSklad() {
+    updateSkladBadge();
     const container = document.getElementById('skladContainer');
     if (!container) return;
     if (warehouse.length === 0) {
@@ -2884,6 +2956,7 @@ function renderSklad() {
         const qty = it.qty || 0;
         const low = it.lowStock || 0;
         const unit = it.unit || 'ks';
+        const adjStep = whAdjStep[it.id] || '0.2';
         const vol = it.volumeL || 0;
         const poured = it.pouredL || 0;
         const isLow = low > 0 && qty <= low;
@@ -2900,12 +2973,14 @@ function renderSklad() {
                    <div class="bottle-bar"><div class="bottle-fill" style="width:${remPct}%"></div></div>
                    <div class="bottle-adjust">
                        <span>Doladiť:</span>
-                       <select id="whadj_${it.id}" class="bottle-sel">
-                           <option value="0.02">0,02</option>
-                           <option value="0.04">0,04</option>
-                           <option value="0.1">0,1</option>
-                           <option value="0.2" selected>0,2</option>
-                           <option value="0.4">0,4</option>
+                       <select id="whadj_${it.id}" class="bottle-sel" onchange="whAdjStep['${idEsc}']=this.value">
+                           <option value="0.02"${adjStep==='0.02'?' selected':''}>0,02</option>
+                           <option value="0.04"${adjStep==='0.04'?' selected':''}>0,04</option>
+                           <option value="0.1"${adjStep==='0.1'?' selected':''}>0,1</option>
+                           <option value="0.2"${adjStep==='0.2'?' selected':''}>0,2</option>
+                           <option value="0.3"${adjStep==='0.3'?' selected':''}>0,3</option>
+                           <option value="0.4"${adjStep==='0.4'?' selected':''}>0,4</option>
+                           <option value="0.5"${adjStep==='0.5'?' selected':''}>0,5</option>
                        </select>
                        <button class="bottle-btn plus" onclick="adjustOpenedBottle('${idEsc}', 1)">+</button>
                        <button class="bottle-btn minus" onclick="adjustOpenedBottle('${idEsc}', -1)">−</button>
@@ -2931,13 +3006,45 @@ function renderSklad() {
     container.innerHTML = html;
 }
 
+// ── Napojenie existujúceho nápoja na sklad ──
+async function linkDrinkToWarehouse() {
+    const dSel = document.getElementById('linkDrinkSel');
+    const wSel = document.getElementById('linkWhSel');
+    const pSel = document.getElementById('linkPortionSel');
+    const drinkName = dSel ? dSel.value : '';
+    if (!drinkName) { alert('Vyber nápoj z ponuky.'); return; }
+    const drink = menu.find(d => d.name === drinkName);
+    if (!drink) return;
+    drink.whId = wSel ? wSel.value : '';
+    drink.portionL = parseFloat(pSel ? pSel.value : 0) || 0;
+    await saveDrink(drink);
+    if (dSel) dSel.value = '';
+    renderLinkedDrinks();
+    alert(drink.whId ? `Napojené: ${drink.name} ✅` : `Odpojené: ${drink.name}`);
+}
+
+function renderLinkedDrinks() {
+    const box = document.getElementById('linkedDrinksList');
+    if (!box) return;
+    const linked = menu.filter(d => d.whId);
+    if (linked.length === 0) { box.innerHTML = ''; return; }
+    let html = '<div style="color:#94a3b8; font-size:12px; margin-bottom:4px;">Napojené nápoje:</div>';
+    linked.sort((a,b)=>a.name.localeCompare(b.name,'sk')).forEach(d => {
+        const wh = warehouse.find(w => w.id === d.whId);
+        const por = d.portionL > 0 ? `${String(d.portionL).replace('.', ',')} l` : '1 ks';
+        html += `<div class="stam-draft-row"><span>${d.name} → 📦 ${wh ? wh.name : '(zmazaný sklad)'} · ${por}</span></div>`;
+    });
+    box.innerHTML = html;
+}
+
 // Doladenie načatej fľašky (+ = doliať/vrátiť, − = ubrať/vypité navyše).
 // Prenáša cez okraj: keď ubratie presiahne zvyšok, odpočíta sa ďalšia fľaša; keď doliatie presiahne plnú, fľaša sa pripočíta.
 function adjustOpenedBottle(id, sign) {
     const it = warehouse.find(x => x.id === id);
     if (!it || !(it.volumeL > 0)) return;
     const sel = document.getElementById('whadj_' + id);
-    const step = parseFloat(sel ? sel.value : 0.2) || 0.2;
+    if (sel) whAdjStep[id] = sel.value;                       // ulož aktuálny výber
+    const step = parseFloat(whAdjStep[id] || '0.2') || 0.2;
     let poured = (it.pouredL || 0) - sign * step;   // + zmenšuje načaté (dolieva), − zväčšuje (uberá)
     const bottles = Math.floor(poured / it.volumeL);
     if (bottles !== 0) {
